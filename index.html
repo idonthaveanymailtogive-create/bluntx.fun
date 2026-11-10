@@ -3,190 +3,251 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Launchguard — Scan memecoins before you buy</title>
-  <meta name="description" content="Launchguard is a browser extension for pump.fun. Turn it on for a tab to scan the coins on the page and see a Safe, Risky or Rug score with the reasons. Coming soon.">
-  <meta name="theme-color" content="#07090f">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://cdn.dexscreener.com https://dd.dexscreener.com; font-src 'self'; connect-src 'self' https://api.dexscreener.com https://api.rugcheck.xyz https://api.gopluslabs.io https://api.honeypot.is https://public.rpc.solanavibestation.com https://solana.api.pocket.network https://solana-rpc.publicnode.com https://api.mainnet-beta.solana.com; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+  <title>BluntX — Token risk checker for any chain</title>
+  <meta name="description" content="Check any coin before you buy. Free token risk checker for any chain: paste an address and get Low risk, Caution or High risk with a points score and plain-English findings. No wallet, no account, no data stored.">
+  <meta name="theme-color" content="#07090a">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="BluntX — Check any coin before you buy">
+  <meta property="og:description" content="Free token risk checker for any chain. Low risk, Caution or High risk with a points score and plain-English findings.">
+  <meta property="og:url" content="https://bluntx.fun/">
+  <meta property="og:image" content="https://bluntx.fun/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@BluntXfun">
+  <meta name="twitter:image" content="https://bluntx.fun/og.png">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.png" type="image/png" sizes="48x48">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="BluntX">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Launchguard">
-  <meta property="og:title" content="Launchguard — Scan memecoins before you buy">
-  <meta property="og:description" content="A browser extension for pump.fun. Safe, Risky or Rug scores with reasons. Coming soon.">
-  <meta property="og:url" content="https://bluntx.fun/">
-  <meta property="og:type" content="website">
-  <meta property="og:image" content="https://bluntx.fun/og.png">
-  <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="Launchguard — Scan memecoins before you buy">
-  <meta name="twitter:description" content="A browser extension for pump.fun. Coming soon.">
-  <meta name="twitter:image" content="https://bluntx.fun/og.png">
-  <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="icon" href="favicon.png" type="image/png" sizes="32x32">
-  <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
 </head>
 <body>
+  <svg class="sprite" aria-hidden="true" focusable="false">
+    <defs>
+      <linearGradient id="bxg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b6ff3b"/><stop offset="1" stop-color="#22e584"/></linearGradient>
+    </defs>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.6-3 8.3-7 10-4-1.7-7-5.4-7-10V6z"/></symbol>
+    <symbol id="i-paste" viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4h6v3H9zM9 12h6M9 16h4"/></symbol>
+    <symbol id="i-scan" viewBox="0 0 24 24"><path d="M4 8V5a1 1 0 011-1h3M16 4h3a1 1 0 011 1v3M20 16v3a1 1 0 01-1 1h-3M8 20H5a1 1 0 01-1-1v-3M4 12h16"/></symbol>
+    <symbol id="i-report" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></symbol>
+    <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M11 12l8-8M16 7l2 2M14 9l2 2"/></symbol>
+    <symbol id="i-freeze" viewBox="0 0 24 24"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.5L12 7l2.5-2.5M9.5 19.5L12 17l2.5 2.5"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.4 3.4-5.5 6.5-5.5s5.7 2.1 6.5 5.5M16 4.6a3.5 3.5 0 010 6.8M18 14.8c1.8.7 3 2.5 3.5 5.2"/></symbol>
+    <symbol id="i-drop" viewBox="0 0 24 24"><path d="M12 3s6 6.4 6 11a6 6 0 01-12 0c0-4.6 6-11 6-11z"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-pulse" viewBox="0 0 24 24"><path d="M3 12h4l2-6 4 12 2-6h6"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></symbol>
+    <symbol id="i-code" viewBox="0 0 24 24"><path d="M8 8l-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></symbol>
+    <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M3 3l18 18M10.6 6.1A9.8 9.8 0 0112 6c5 0 9 6 9 6a16 16 0 01-2.7 3.3M6.3 7.6C4.2 9.1 3 12 3 12s4 6 9 6c1.5 0 2.9-.4 4.1-1"/><path d="M9.9 10a3 3 0 004.2 4.2"/></symbol>
+    <symbol id="i-wallet-off" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M16 12.5h2M3 3l18 18"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5a2 2 0 012-2h13v16H6a2 2 0 00-2 2zM4 19V5M8 7h7"/></symbol>
+    <symbol id="i-puzzle" viewBox="0 0 24 24"><path d="M10 4a2 2 0 014 0v2h4v4h-2a2 2 0 000 4h2v4h-4v-2a2 2 0 00-4 0v2H6v-4H4a2 2 0 010-4h2V6h4z"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path class="fill" d="M17.8 3h3.1l-6.8 7.7L22 21h-6.2l-4.9-6.4L5.3 21H2.2l7.2-8.3L1.8 3h6.4l4.4 5.8zm-1.1 16.2h1.7L7.4 4.7H5.6z"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  </svg>
+
   <header class="nav">
-    <a class="brand" href="#top">
-      <img class="logo-nav" src="logo.svg" alt="" width="32" height="32">
-      <span>Launchguard</span>
-    </a>
-    <nav>
-      <a href="#features">Features</a>
-      <a href="#safety">Safety checks</a>
-      <a href="#install">Install</a>
-    </nav>
+    <div class="wrap nav-in">
+      <a class="brand" href="/" aria-label="BluntX home"><img src="/logo.svg" alt="" width="30" height="30"><span>Blunt<b>X</b></span></a>
+      <nav class="links-nav" aria-label="Main">
+        <a href="#how-it-works">How it works</a>
+        <a href="#checks">What we check</a>
+        <a href="#extension">Extension</a>
+        <a href="#faq">FAQ</a>
+        <a href="/whitepaper.html">Whitepaper</a>
+      </nav>
+      <a class="xbtn" href="https://x.com/BluntXfun" target="_blank" rel="noopener noreferrer" aria-label="BluntX on X (@BluntXfun)"><svg class="ico"><use href="#i-x"/></svg><span>@BluntXfun</span></a>
+    </div>
   </header>
 
   <main id="top">
     <section class="hero">
-      <p class="tag">Launching soon</p>
-      <img class="hero-logo" src="logo.svg" alt="Launchguard shield">
-      <h1>Launchguard</h1>
-      <p class="lead">Scan the coins on a pump.fun tab before you buy.</p>
-      <p class="sub">Launchguard is a browser extension. You have pump.fun open, you turn it on for that tab, and it tells you about every coin on the page — Safe, Risky or Rug, with the reasons.</p>
-      <div class="actions">
-        <a class="btn primary" href="launchguard-extension.zip" download>Download the prototype</a>
-        <a class="btn ghost" href="#install">How to load it</a>
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="dot"></span>Token risk checker · Any chain</p>
+          <h1>Check any coin <span class="accent">before you buy.</span></h1>
+          <p class="lead">Paste a token address or a DexScreener or pump.fun link. Get a <b class="g">Low risk</b>, <b class="y">Caution</b> or <b class="r">High risk</b> rating, a points score and plain-English findings in seconds.</p>
+
+          <form id="form" class="checker" autocomplete="off" novalidate>
+            <label for="mint" class="sr">Token address or link</label>
+            <div class="field">
+              <svg class="ico field-ico" aria-hidden="true"><use href="#i-scan"/></svg>
+              <input id="mint" name="mint" maxlength="300" inputmode="text" autocapitalize="off" autocorrect="off" placeholder="Paste a token address, DexScreener or pump.fun link" spellcheck="false" required>
+            </div>
+            <div class="field-row">
+              <label for="chain" class="sr">Chain</label>
+              <select id="chain" aria-label="Chain">
+                <option value="auto">Auto-detect chain</option>
+                <option value="solana">Solana</option><option value="ethereum">Ethereum</option><option value="base">Base</option>
+                <option value="bsc">BNB Chain</option><option value="arbitrum">Arbitrum</option><option value="polygon">Polygon</option>
+                <option value="optimism">Optimism</option><option value="avalanche">Avalanche</option><option value="sonic">Sonic</option>
+                <option value="blast">Blast</option><option value="linea">Linea</option><option value="abstract">Abstract</option>
+                <option value="berachain">Berachain</option><option value="tron">Tron</option><option value="sui">Sui</option>
+                <option value="ton">TON</option><option value="hyperliquid">Hyperliquid</option><option value="aptos">Aptos</option>
+              </select>
+              <button id="go" type="submit">Check token <svg class="ico" aria-hidden="true"><use href="#i-arrow"/></svg></button>
+            </div>
+            <p class="hint">Try:
+              <button type="button" class="ex" data-mint="DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263">BONK</button>
+              <button type="button" class="ex" data-mint="9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump">Fartcoin (pump.fun)</button>
+              <button type="button" class="ex" data-mint="0x6982508145454Ce325dDbE47a25d4ec3d2311933">PEPE (ETH)</button>
+              <button type="button" class="ex" data-mint="0x532f27101965dd16442E59d40670FaF5eBB142E4">BRETT (Base)</button>
+            </p>
+          </form>
+
+          <ul class="trust">
+            <li><svg class="ico" aria-hidden="true"><use href="#i-wallet-off"/></svg>No wallet connection</li>
+            <li><svg class="ico" aria-hidden="true"><use href="#i-lock"/></svg>No account</li>
+            <li><svg class="ico" aria-hidden="true"><use href="#i-eye-off"/></svg>No data stored</li>
+            <li><svg class="ico" aria-hidden="true"><use href="#i-book"/></svg>Published methodology</li>
+          </ul>
+        </div>
+
+        <figure class="mock" aria-label="Illustrative example of a BluntX report">
+          <div class="mock-bar"><span></span><span></span><span></span><em>Example report</em></div>
+          <div class="mock-body">
+            <div class="verdict yellow">
+              <div class="score"><b>33</b><small>risk pts</small></div>
+              <div><h3>Caution</h3><p>Some risk signals found. Review the findings below.</p></div>
+            </div>
+            <div class="tok"><div><b>Example Token ($EXAMPLE)</b> <span class="chip">Solana</span><br><code>Illustrative only</code></div></div>
+            <ul class="reasons">
+              <li class="good"><span class="ic">✓</span><span>Mint authority revoked: supply is fixed.</span></li>
+              <li class="good"><span class="ic">✓</span><span>Freeze authority revoked.</span></li>
+              <li class="warn"><span class="ic">!</span><span>Early-stage token: trading started 3 days ago.</span><span class="pts">+8</span></li>
+              <li class="warn"><span class="ic">!</span><span>Top 10 wallets hold 41% of supply.</span><span class="pts">+15</span></li>
+              <li class="warn"><span class="ic">!</span><span>Very low trading volume in 24h.</span><span class="pts">+10</span></li>
+            </ul>
+          </div>
+          <figcaption>Illustration of the report layout. Run a check to see live data.</figcaption>
+        </figure>
       </div>
-      <div class="scores" aria-hidden="true">
-        <span class="pill safe">Safe</span>
-        <span class="pill risky">Risky</span>
-        <span class="pill rug">Rug</span>
+    </section>
+
+    <section class="result wrap" id="result" hidden aria-live="polite">
+      <div class="card result-card">
+        <div id="out"></div>
+        <p class="disclaimer">Not financial advice. Scores are automated signals, not guarantees. Always do your own research.</p>
       </div>
     </section>
 
-    <section id="features" class="section">
-      <h2>Built for a pump.fun tab</h2>
-      <p class="intro">The official store listing is still coming soon. A Chrome prototype is ready to load unpacked today. This is what it does.</p>
-      <ul class="cards">
-        <li>
-          <div class="icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg>
-          </div>
-          <h3>On for this tab</h3>
-          <p>Open pump.fun, flip the Launchguard toggle, and it only runs on that tab.</p>
-        </li>
-        <li>
-          <div class="icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5M4 19l4-3 4 3 4-3 4 3V5L16 8l-4-3-4 3-4-3"/></svg>
-          </div>
-          <h3>Finds coins on the page</h3>
-          <p>It reads coin cards and /coin/ links on the tab you already have open — no separate feed to babysit.</p>
-        </li>
-        <li>
-          <div class="icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg>
-          </div>
-          <h3>Safe, Risky or Rug</h3>
-          <p>Every coin it finds gets a badge and a score, with the reasons spelled out so you can decide for yourself.</p>
-        </li>
-        <li>
-          <div class="icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14c2-5 6-8 8-9 2 1 6 4 8 9-2 5-6 8-8 9-2-1-6-4-8-9z"/><circle cx="12" cy="14" r="2.2"/></svg>
-          </div>
-          <h3>Safety checks</h3>
-          <p>Mint and freeze authority, top-holder concentration, liquidity locked or still on the curve, market cap, volume, age and socials.</p>
-        </li>
-        <li>
-          <div class="icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 8h8M8 12h5"/></svg>
-          </div>
-          <h3>A list of every coin</h3>
-          <p>An on-page panel and a Chrome side panel list every coin found on the tab, with its score and reasons.</p>
-        </li>
-        <li>
-          <div class="icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16M7 16V9M12 16V5M17 16v-4"/></svg>
-          </div>
-          <h3>Public data, no API key</h3>
-          <p>The prototype scores from DexScreener and RugCheck’s public APIs. It does not need your wallet or a paid key.</p>
-        </li>
-      </ul>
-    </section>
-
-    <section id="safety" class="section">
-      <h2>What we check</h2>
-      <p class="intro">The prototype uses public DexScreener and RugCheck fields only. If a field is missing, it is skipped, not invented.</p>
-      <ul class="checks">
-        <li>Mint authority</li>
-        <li>Freeze authority</li>
-        <li>Top-holder concentration</li>
-        <li>RugCheck risk flags</li>
-        <li>Liquidity locked or still on the curve</li>
-        <li>Market cap and 24h volume</li>
-        <li>Pair age</li>
-        <li>Linked socials</li>
-      </ul>
-    </section>
-
-    <section id="score" class="section score-section">
-      <h2>A score you can actually read</h2>
-      <p class="intro">Each coin is rated Safe, Risky or Rug from those public fields, and the badge and side panel show why — not just a number with no explanation.</p>
-      <ul class="score-cards">
-        <li>
-          <span class="pill safe">Safe</span>
-          <p>No major red flags turned up in the checks we run. Still do your own research.</p>
-        </li>
-        <li>
-          <span class="pill risky">Risky</span>
-          <p>One or more warnings, such as concentrated holdings or an unlocked mint. Read the reasons first.</p>
-        </li>
-        <li>
-          <span class="pill rug">Rug</span>
-          <p>Serious danger signs, such as a honeypot, a selling developer, or pulled liquidity.</p>
-        </li>
-      </ul>
-    </section>
-
-    <section id="install" class="section">
-      <h2>Load the prototype in Chrome</h2>
-      <p class="intro">The official store listing is coming soon. Until then you can load the unpacked extension yourself. It is free, and it is not published to any web store.</p>
-      <ol class="steps">
-        <li>
-          <span class="n">1</span>
-          <div>
-            <h3>Download the zip</h3>
-            <p>Get <a href="launchguard-extension.zip" download>launchguard-extension.zip</a> and unzip it on your computer.</p>
-          </div>
-        </li>
-        <li>
-          <span class="n">2</span>
-          <div>
-            <h3>Load it unpacked</h3>
-            <p>Open chrome://extensions, turn on Developer mode, click Load unpacked, and choose the unzipped folder.</p>
-          </div>
-        </li>
-        <li>
-          <span class="n">3</span>
-          <div>
-            <h3>Turn it on for a pump.fun tab</h3>
-            <p>Open pump.fun, click the Launchguard icon, and switch it on. Coins on that page get a badge and a list of scores.</p>
-          </div>
-        </li>
+    <section class="section wrap" id="how-it-works">
+      <p class="kicker">How it works</p>
+      <h2>Three steps, a few seconds.</h2>
+      <ol class="steps3">
+        <li class="card"><span class="num">1</span><svg class="ico lg" aria-hidden="true"><use href="#i-paste"/></svg><h3>Paste</h3><p>Paste a contract or mint address, or a DexScreener or pump.fun link. BluntX detects the chain from the address and the most liquid market.</p></li>
+        <li class="card"><span class="num">2</span><svg class="ico lg" aria-hidden="true"><use href="#i-scan"/></svg><h3>Check</h3><p>Your browser queries public data sources directly: contract permissions, taxes, liquidity, holders, age and trading activity.</p></li>
+        <li class="card"><span class="num">3</span><svg class="ico lg" aria-hidden="true"><use href="#i-report"/></svg><h3>Read the report</h3><p>Each finding adds risk points. The total gives a Low risk, Caution or High risk rating, with every reason listed in plain English.</p></li>
       </ol>
     </section>
-    <section class="section soon">
-      <h2>Coming soon</h2>
-      <p>A store-ready Launchguard release is still on the way. This prototype is for trying the scanner. It is not a live trade signal, and a score is not a guarantee.</p>
+
+    <section class="section wrap" id="checks">
+      <p class="kicker">What we check</p>
+      <h2>The signals that matter, in one report.</h2>
+      <div class="grid4">
+        <div class="card feat"><svg class="ico lg" aria-hidden="true"><use href="#i-alert"/></svg><h3>Honeypot and taxes</h3><p>Sell simulations and buy/sell tax on EVM chains and Tron, via GoPlus and honeypot.is.</p></div>
+        <div class="card feat"><svg class="ico lg" aria-hidden="true"><use href="#i-key"/></svg><h3>Mint permission</h3><p>Whether new supply can still be created, diluting existing holders.</p></div>
+        <div class="card feat"><svg class="ico lg" aria-hidden="true"><use href="#i-freeze"/></svg><h3>Freeze authority</h3><p>Solana tokens whose balances can be frozen, blocking transfers or sales.</p></div>
+        <div class="card feat"><svg class="ico lg" aria-hidden="true"><use href="#i-code"/></svg><h3>Owner permissions</h3><p>Balance edits, hidden owners, blacklists, pausing, adjustable taxes and unverified code.</p></div>
+        <div class="card feat"><svg class="ico lg" aria-hidden="true"><use href="#i-users"/></svg><h3>Holder concentration</h3><p>Share held by the top 10 wallets, excluding identified pools and bonding curves.</p></div>
+        <div class="card feat"><svg class="ico lg" aria-hidden="true"><use href="#i-drop"/></svg><h3>Liquidity</h3><p>Pool depth and price impact, LP lock status, and bonding-curve market cap.</p></div>
+        <div class="card feat"><svg class="ico lg" aria-hidden="true"><use href="#i-clock"/></svg><h3>Token age</h3><p>How long the token has traded. Newly launched tokens carry more risk.</p></div>
+        <div class="card feat"><svg class="ico lg" aria-hidden="true"><use href="#i-pulse"/></svg><h3>Trading activity</h3><p>24h volume and buy/sell balance, plus RugCheck findings on Solana.</p></div>
+      </div>
+    </section>
+
+    <section class="section wrap" id="how">
+      <p class="kicker">Methodology</p>
+      <h2>A transparent points score.</h2>
+      <p class="sub">The same rules apply on every chain. Each token starts at 0 risk points and each finding adds points. Certain findings result in High risk automatically.</p>
+      <div class="scale" role="img" aria-label="Under 25 points is Low risk, 25 to 54 is Caution, 55 or more is High risk">
+        <div class="seg g-seg"><b>Low risk</b><span>0–24 pts</span></div>
+        <div class="seg y-seg"><b>Caution</b><span>25–54 pts</span></div>
+        <div class="seg r-seg"><b>High risk</b><span>55+ pts</span></div>
+      </div>
+      <details class="method">
+        <summary>See every rule and its points</summary>
+        <div class="grid3">
+          <div class="card"><h3>Honeypot and taxes</h3><p>EVM and Tron: GoPlus Security and honeypot.is sell simulations (Ethereum, Base, BNB Chain). A honeypot or a sell tax above 50% = <b>High risk</b>. Sell tax above 10% = <b>+25</b>.</p></div>
+          <div class="card"><h3>Mint permission</h3><p>An active Solana mint authority, or an EVM owner with minting rights = <b>+35</b>. Renounced permissions add nothing.</p></div>
+          <div class="card"><h3>Owner permissions</h3><p>Owner can modify balances = <b>+40</b>. Hidden owner, reclaimable ownership, unverified source code or a creator linked to previous honeypots = <b>+20–25</b> each. Blacklist, pause or adjustable tax with an active owner = <b>+15</b> each.</p></div>
+          <div class="card"><h3>Freeze authority</h3><p>Solana: an active freeze authority can prevent holders from transferring or selling. Active = <b>High risk</b>.</p></div>
+          <div class="card"><h3>Holder concentration</h3><p>Top 10 wallets, excluding pools and bonding curves: above 50% = <b>+30</b>, above 30% = <b>+15</b>. A single wallet above 15% = <b>+15</b>. Unlocked LP on smaller EVM pools = <b>+15</b>.</p></div>
+          <div class="card"><h3>Liquidity</h3><p>Under $5k = <b>+30</b>, under $25k = <b>+15</b>. Tokens still on a pump.fun bonding curve are assessed by market cap: under $10k = <b>+20</b>, under $50k = <b>+10</b>.</p></div>
+          <div class="card"><h3>Token age</h3><p>Under 24 hours = <b>+15</b>, under 7 days = <b>+8</b>.</p></div>
+          <div class="card"><h3>Trading activity</h3><p>More than 70% of 24h trades are sells, or 24h volume under $1k = <b>+10</b> each.</p></div>
+          <div class="card"><h3>RugCheck (Solana)</h3><p>The public <a href="https://rugcheck.xyz" target="_blank" rel="noopener noreferrer">RugCheck</a> report is included. Flagged as rugged = <b>High risk</b>. Each “danger” finding = <b>+15</b> (up to 3).</p></div>
+          <div class="card"><h3>Other chains</h3><p>For TON, Hyperliquid, Aptos and other chains without a free contract scanner, the rating uses market data only (+10 for the missing contract check) and is labelled accordingly.</p></div>
+          <div class="card"><h3>Data sources</h3><p>DexScreener (all chains), GoPlus Security (EVM, Tron, Sui), honeypot.is (Ethereum, Base, BNB Chain), Solana RPC and RugCheck (Solana). All checks run live in your browser.</p></div>
+          <div class="card"><h3>Chains</h3><p>Solana (including pump.fun), Ethereum, Base, BNB Chain, Arbitrum, Polygon, Optimism, Avalanche and other EVM chains, Tron, Sui, TON and more.</p></div>
+        </div>
+      </details>
+    </section>
+
+    <section class="section wrap" id="extension">
+      <div class="card ext-card">
+        <div class="ext-copy">
+          <p class="kicker"><svg class="ico" aria-hidden="true"><use href="#i-puzzle"/></svg> Browser extension (beta)</p>
+          <h2>Ratings on pump.fun, right in the tab.</h2>
+          <p class="sub">Switch on the BluntX extension in a pump.fun tab and each coin on the page gets a <b class="g">Low risk</b>, <b class="y">Caution</b> or <b class="r">High risk</b> badge with its risk score. The side panel lists the findings behind every rating. It uses the same points model as the Solana checker, with DexScreener and RugCheck data.</p>
+          <a class="cta" href="/bluntx-extension.zip" download>Download v0.1 (.zip)</a>
+          <p class="small-note">Beta, not yet on the Chrome Web Store. Desktop Chrome and other Chromium browsers. No wallet access, no transactions.</p>
+        </div>
+        <ol class="steps">
+          <li><b>Download and unzip</b> <code>bluntx-extension.zip</code>.</li>
+          <li>Open <code>chrome://extensions</code> in Chrome.</li>
+          <li>Turn on <b>Developer mode</b> (top right).</li>
+          <li>Click <b>Load unpacked</b> and select the unzipped <code>bluntx-extension</code> folder.</li>
+          <li>Open pump.fun, click the BluntX icon and switch <b>On for this tab</b>.</li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="section wrap" id="faq">
+      <p class="kicker">FAQ</p>
+      <h2>Questions, answered.</h2>
+      <div class="faq">
+        <details><summary>Is BluntX free?</summary><p>Yes. The checker and the browser extension are free to use. There is no account and nothing to sign up for.</p></details>
+        <details><summary>Do I need to connect a wallet?</summary><p>No. BluntX never asks for a wallet connection, a signature or a private key. If anything claiming to be BluntX asks for one, it is not us.</p></details>
+        <details><summary>What data do you store?</summary><p>None. The site is static. Checks run in your browser against public APIs, and BluntX has no server that sees your searches.</p></details>
+        <details><summary>Does Low risk mean a token is safe?</summary><p>No. Low risk means few known risk signals were found at the time of the check. Owners can change settings or remove liquidity later, and new techniques may not be detected. It is not financial advice.</p></details>
+        <details><summary>Which chains are supported?</summary><p>Full contract checks on Solana (including pump.fun), Ethereum, Base, BNB Chain, Arbitrum and other EVM chains, Tron and Sui. Other chains listed on DexScreener get a market-data-only rating, clearly labelled.</p></details>
+        <details><summary>Can I install it like an app?</summary><p>Yes. On phone or tablet, use your browser's “Add to Home Screen” or “Install app” option to get BluntX with its own icon.</p></details>
+        <details><summary>Where does the data come from?</summary><p>DexScreener, GoPlus Security, honeypot.is, Solana public RPC and RugCheck. The report lists which sources answered and links to each one.</p></details>
+      </div>
+    </section>
+
+    <section class="section wrap docs">
+      <div class="card docs-card">
+        <svg class="ico lg" aria-hidden="true"><use href="#i-book"/></svg>
+        <div class="docs-copy"><h3>Whitepaper</h3><p>The full methodology, data sources, limitations and roadmap.</p></div>
+        <div class="links"><a href="/whitepaper.html">Read online</a><a href="/whitepaper.pdf" download>Download PDF</a></div>
+      </div>
     </section>
   </main>
 
   <footer class="foot">
-    <p class="brand-foot">
-      <img src="logo.svg" alt="" width="20" height="20">
-      Launchguard
-    </p>
-    <p class="small">Launchguard is a pump.fun browser extension in development. It is not financial advice, and a score is not a guarantee. Crypto is volatile. Only spend what you can afford to lose, and always do your own research.</p>
-    <p class="small">© <span id="yr"></span> Launchguard · bluntx.fun</p>
+    <div class="wrap foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="/"><img src="/logo.svg" alt="" width="28" height="28"><span>Blunt<b>X</b></span></a>
+        <p>Token risk checker for any chain.</p>
+        <a class="xbtn" href="https://x.com/BluntXfun" target="_blank" rel="noopener noreferrer"><svg class="ico"><use href="#i-x"/></svg><span>Follow @BluntXfun</span></a>
+      </div>
+      <nav class="foot-col" aria-label="Product"><h4>Product</h4><a href="#top">Checker</a><a href="#extension">Browser extension</a><a href="#how">Methodology</a></nav>
+      <nav class="foot-col" aria-label="Resources"><h4>Resources</h4><a href="/whitepaper.html">Whitepaper</a><a href="#faq">FAQ</a><a href="/SECURITY.md">Security</a></nav>
+    </div>
+    <div class="wrap foot-legal">
+      <p>Not financial advice. Scores are automated signals, not guarantees. Digital assets are volatile; only invest what you can afford to lose.</p>
+      <p>© <span id="yr">2026</span> BluntX · bluntx.fun</p>
+    </div>
   </footer>
-  <script>
-    document.getElementById('yr').textContent = new Date().getFullYear();
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function () {
-        navigator.serviceWorker.register('/sw.js');
-      });
-    }
-  </script>
 </body>
 </html>

@@ -1,0 +1,354 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="referrer" content="no-referrer"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BluntX Whitepaper — Token risk checker for any chain</title>
+<meta name="description" content="How BluntX rates tokens: methodology, data sources, limitations and roadmap.">
+<meta name="theme-color" content="#07090a"><link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/whitepaper.css"><script src="/framebuster.js"></script>
+</head><body>
+<header class="nav"><a class="brand" href="/"><img src="/logo.svg" alt="" width="28" height="28"><span>Blunt<b>X</b></span></a><a class="dl" href="/whitepaper.pdf" download>Download PDF</a></header>
+<main><h1>BluntX Whitepaper</h1>
+<p><strong>A free, multi-chain token risk checker</strong></p>
+<p>Version 1.0 (draft) · November 2026 · <a href="https://bluntx.fun" target="_blank" rel="noopener noreferrer">bluntx.fun</a> · <a href="https://x.com/BluntXfun" target="_blank" rel="noopener noreferrer">@BluntXfun</a></p>
+<blockquote>
+<p>Not financial advice. BluntX scores are automated signals, not guarantees. Always do your own research.</p>
+</blockquote>
+<hr />
+<h2>1. The problem</h2>
+<p>Launching a token now takes minutes and costs almost nothing. That openness is valuable, but it also means a large share of new tokens are built to take money from their buyers. The most common patterns are:</p>
+<ul>
+<li><strong>Honeypots.</strong> The contract lets people buy but blocks or heavily taxes selling, so buyers cannot exit.</li>
+<li><strong>Rug pulls.</strong> The creator removes the liquidity pool, or sells a large hidden allocation, and the price collapses.</li>
+<li><strong>Owner backdoors.</strong> Contract permissions let an owner mint new supply, freeze or blacklist wallets, pause trading, change taxes, or even edit balances.</li>
+<li><strong>Concentrated supply.</strong> A few wallets hold most of the supply and can sell into the market at any time.</li>
+</ul>
+<p>Most of this information is public and on-chain. The difficulty is that it is spread across several tools, uses technical language, and varies by chain. Many buyers, especially newer ones, never see it before they buy.</p>
+<h2>2. What BluntX does</h2>
+<p>BluntX is a free website that turns that public data into one readable report.</p>
+<ol>
+<li>Paste a token's contract or mint address (or a DexScreener / pump.fun link).</li>
+<li>BluntX detects the chain, queries several public data sources directly from your browser, and applies a fixed set of rules.</li>
+<li>You get a rating of <strong>Low risk (Green)</strong>, <strong>Caution (Yellow)</strong> or <strong>High risk (Red)</strong>, a numeric risk score, key market statistics, and a list of plain-English findings explaining the rating, with links to DexScreener, block explorers and the underlying reports.</li>
+</ol>
+<p>Key properties:</p>
+<ul>
+<li><strong>Free, no account, no wallet connection.</strong> BluntX never asks you to sign anything.</li>
+<li><strong>Multi-chain.</strong> Solana (including pump.fun), Ethereum, Base, BNB Chain, Arbitrum, Polygon, Optimism, Avalanche and other EVM chains, Tron, Sui, TON and any chain listed on DexScreener.</li>
+<li><strong>Client-side.</strong> The site is static. Checks run in your browser against public APIs; BluntX has no server and stores no data about you or your searches.</li>
+</ul>
+<h3>Chain detection</h3>
+<p>The address format gives a first guess: base58 (Solana), <code>0x</code> + 40 hex characters (EVM), <code>T…</code> (Tron), <code>EQ…</code>/<code>UQ…</code> (TON), <code>0x…::module::COIN</code> (Sui). BluntX then looks up the address on DexScreener and, in Auto mode, selects the chain with the most liquidity. Users can override the chain with a dropdown. If a token trades on several chains, the report lists the others.</p>
+<h3>Browser extension (beta)</h3>
+<p>A Chrome extension brings the same ratings to pump.fun. When switched on for a pump.fun tab, it rates each coin on the page <strong>Low risk</strong>, <strong>Caution</strong> or <strong>High risk</strong> with its risk score, using the same points model as the Solana checker (DexScreener and RugCheck data), and lists the findings in a side panel. It needs no wallet access and makes no transactions. It is available from bluntx.fun as a load-unpacked beta.</p>
+<h2>3. How scoring works</h2>
+<p>Every token starts at <strong>0 risk points</strong>. Each finding adds points. The total maps to a rating:</p>
+<table>
+<thead>
+<tr>
+<th>Risk score</th>
+<th>Rating</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0–24</td>
+<td><strong>Low risk</strong> (Green)</td>
+</tr>
+<tr>
+<td>25–54</td>
+<td><strong>Caution</strong> (Yellow)</td>
+</tr>
+<tr>
+<td>55 or more</td>
+<td><strong>High risk</strong> (Red)</td>
+</tr>
+</tbody>
+</table>
+<p>Some findings make a token <strong>High risk automatically</strong>, regardless of the total. The rules below are the same ones implemented in the site's code.</p>
+<h3>3.1 Automatic High risk</h3>
+<table>
+<thead>
+<tr>
+<th>Finding</th>
+<th>Chains</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Honeypot detected (GoPlus or honeypot.is simulation)</td>
+<td>EVM, Tron</td>
+</tr>
+<tr>
+<td>Sell tax above 50%</td>
+<td>EVM, Tron</td>
+</tr>
+<tr>
+<td>Freeze authority active</td>
+<td>Solana</td>
+</tr>
+<tr>
+<td>Token flagged as rugged by RugCheck</td>
+<td>Solana</td>
+</tr>
+</tbody>
+</table>
+<h3>3.2 Contract and permission checks</h3>
+<p><strong>Solana</strong> (Solana RPC, RugCheck as fallback)</p>
+<table>
+<thead>
+<tr>
+<th>Finding</th>
+<th>Points</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Mint authority active (supply can be increased)</td>
+<td>+35</td>
+</tr>
+<tr>
+<td>Freeze authority active</td>
+<td>+40 and automatic High risk</td>
+</tr>
+<tr>
+<td>Authorities could not be read</td>
+<td>+10</td>
+</tr>
+<tr>
+<td>Each RugCheck "danger" finding (up to 3)</td>
+<td>+15 each</td>
+</tr>
+</tbody>
+</table>
+<p><strong>EVM chains and Tron</strong> (GoPlus, plus honeypot.is on Ethereum, Base and BNB Chain)</p>
+<table>
+<thead>
+<tr>
+<th>Finding</th>
+<th>Points</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Owner can modify wallet balances</td>
+<td>+40</td>
+</tr>
+<tr>
+<td>Full balance cannot be sold in one transaction</td>
+<td>+25</td>
+</tr>
+<tr>
+<td>Sell tax above 10% (above 5%)</td>
+<td>+25 (+10)</td>
+</tr>
+<tr>
+<td>Buy tax above 10% (above 5%)</td>
+<td>+15 (+5)</td>
+</tr>
+<tr>
+<td>Hidden owner</td>
+<td>+25</td>
+</tr>
+<tr>
+<td>Ownership can be reclaimed after renouncing</td>
+<td>+25</td>
+</tr>
+<tr>
+<td>Creator linked to previous honeypots</td>
+<td>+25</td>
+</tr>
+<tr>
+<td>Contract source code not verified</td>
+<td>+20</td>
+</tr>
+<tr>
+<td>Self-destruct function</td>
+<td>+15</td>
+</tr>
+<tr>
+<td>Proxy (upgradeable) contract</td>
+<td>+10</td>
+</tr>
+<tr>
+<td>Buying currently restricted</td>
+<td>+10</td>
+</tr>
+<tr>
+<td>honeypot.is could not simulate a sale</td>
+<td>+10</td>
+</tr>
+<tr>
+<td>LP tokens less than 90% locked or burned, on pools under $500k liquidity</td>
+<td>+15</td>
+</tr>
+</tbody>
+</table>
+<p>Where taxes are reported by both GoPlus and honeypot.is, the higher value is used.</p>
+<p><strong>Owner-dependent permissions.</strong> Some functions only matter if someone can use them. For minting (+35), blacklisting (+15), pausing trading (+15), changing taxes (+15) and per-wallet taxes (+15):</p>
+<ul>
+<li>if the contract has an <strong>active owner</strong>, the full points apply;</li>
+<li>if the owner <strong>cannot be determined</strong>, half the points apply;</li>
+<li>if ownership is <strong>renounced</strong>, no points apply and the report notes the function exists but cannot be used;</li>
+<li>if GoPlus lists the token as <strong>trusted</strong> and it has an owner, one third of the points apply (for example, staking emissions on established tokens).</li>
+</ul>
+<p><strong>Sui</strong> (GoPlus)</p>
+<table>
+<thead>
+<tr>
+<th>Finding</th>
+<th>Points</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Supply mintable</td>
+<td>+35</td>
+</tr>
+<tr>
+<td>Blacklist enabled</td>
+<td>+25</td>
+</tr>
+<tr>
+<td>Upgradeable contract</td>
+<td>+10</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Other chains</strong> (for example TON, Hyperliquid, Aptos): no free contract scanner is available, so the rating uses market data only, adds <strong>+10</strong> for the missing contract check, and is clearly labelled "market data only".</p>
+<h3>3.3 Market checks (all chains, DexScreener)</h3>
+<table>
+<thead>
+<tr>
+<th>Finding</th>
+<th>Points</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>No trading market found</td>
+<td>+25</td>
+</tr>
+<tr>
+<td>Liquidity under $5,000 (under $25,000)</td>
+<td>+30 (+15)</td>
+</tr>
+<tr>
+<td>Still on a launchpad bonding curve with market cap under $10,000 (under $50,000)</td>
+<td>+20 (+10)</td>
+</tr>
+<tr>
+<td>Trading started under 24 hours ago (under 7 days)</td>
+<td>+15 (+8)</td>
+</tr>
+<tr>
+<td>More than 70% of 24h trades are sells (min. 20 trades)</td>
+<td>+10</td>
+</tr>
+<tr>
+<td>24h volume under $1,000</td>
+<td>+10</td>
+</tr>
+</tbody>
+</table>
+<h3>3.4 Holder concentration</h3>
+<p>BluntX measures the share of supply held by the 10 largest wallets, <strong>excluding</strong> liquidity pools, bonding curves, locked accounts and burn addresses where they can be identified.</p>
+<table>
+<thead>
+<tr>
+<th>Finding</th>
+<th>Points</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Top 10 wallets hold more than 50% (more than 30%)</td>
+<td>+30 (+15)</td>
+</tr>
+<tr>
+<td>A single wallet holds more than 15%</td>
+<td>+15</td>
+</tr>
+<tr>
+<td>Holder data unavailable</td>
+<td>+5</td>
+</tr>
+</tbody>
+</table>
+<p>Exchange and treasury wallets are counted as holders, so large, established tokens can show elevated concentration. The report notes this.</p>
+<h3>3.5 Worked examples (live checks, November 2026)</h3>
+<ul>
+<li><strong>PEPE (Ethereum):</strong> Low risk, score 15. No honeypot, 0% taxes, ownership renounced, verified code, 99.4% of LP locked or burned; +15 for top-10 concentration of 34.7%.</li>
+<li><strong>A small pump.fun token (Solana):</strong> Caution, score 38. Mint and freeze revoked, but very low market cap (+20), under 7 days old (+8) and very low volume (+10).</li>
+</ul>
+<h2>4. Data sources</h2>
+<p>All sources are free, public and queried directly from the user's browser. BluntX does not modify their data.</p>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>Used for</th>
+<th>Chains</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://dexscreener.com" target="_blank" rel="noopener noreferrer">DexScreener</a></td>
+<td>Chain detection, price, liquidity, market cap/FDV, age, volume, buys/sells, pool addresses</td>
+<td>All</td>
+</tr>
+<tr>
+<td><a href="https://gopluslabs.io" target="_blank" rel="noopener noreferrer">GoPlus Security</a></td>
+<td>Honeypot flag, taxes, owner permissions, contract properties, top holders, LP lock status</td>
+<td>EVM, Tron, Sui</td>
+</tr>
+<tr>
+<td><a href="https://honeypot.is" target="_blank" rel="noopener noreferrer">honeypot.is</a></td>
+<td>Buy/sell simulation and effective taxes</td>
+<td>Ethereum, Base, BNB Chain</td>
+</tr>
+<tr>
+<td><a href="https://rugcheck.xyz" target="_blank" rel="noopener noreferrer">RugCheck</a></td>
+<td>Risk findings, rugged flag, labelled pool accounts, holder fallback</td>
+<td>Solana</td>
+</tr>
+<tr>
+<td>Solana public RPC</td>
+<td>Mint and freeze authority, supply, largest token accounts</td>
+<td>Solana</td>
+</tr>
+</tbody>
+</table>
+<p>If a source is unavailable, the report says which one, and falls back where possible (for example, multiple Solana RPC endpoints, then RugCheck).</p>
+<h2>5. Limitations</h2>
+<p>BluntX is a screening tool, not an audit. Please read these limitations before relying on a result.</p>
+<ul>
+<li><strong>Signals, not guarantees.</strong> A Low risk rating means few known risk signals were found at the time of the check. It does not mean a token is safe or a good investment. A High risk rating does not prove fraud.</li>
+<li><strong>Point-in-time.</strong> Owners can change settings, remove liquidity or sell after a check. Results are not monitored.</li>
+<li><strong>Third-party data.</strong> Results depend on external providers, which can be incomplete, delayed, rate-limited or wrong.</li>
+<li><strong>Unknown techniques.</strong> New scam methods may not be detected by any current rule or data source.</li>
+<li><strong>Holder attribution.</strong> Exchange, team, treasury and pool wallets cannot always be told apart.</li>
+<li><strong>Simulation coverage.</strong> Sell simulations are only available on Ethereum, Base and BNB Chain.</li>
+<li><strong>Limited chains.</strong> Chains without a free contract scanner receive a market-data-only rating.</li>
+<li><strong>Fixed thresholds.</strong> The rules are deliberately simple and transparent, which means they will sometimes over- or under-weight a finding for a particular token.</li>
+</ul>
+<h2>6. Roadmap</h2>
+<p>Planned features, all intended to remain free. Timelines are not guaranteed and depend on available free infrastructure.</p>
+<ol>
+<li><strong>Wallet checker.</strong> Paste a wallet address to see which of its holdings carry high-risk findings.</li>
+<li><strong>X reply bot.</strong> Mention @BluntXfun with a contract address and receive a short summary of the check, with a link to the full report.</li>
+<li><strong>Watchlist alerts.</strong> Save tokens locally in the browser and get notified when a rating changes, for example if liquidity drops or a permission is re-enabled.</li>
+<li><strong>More chains and sources.</strong> Contract checks for additional chains as free, browser-compatible scanners become available.</li>
+<li><strong>Shareable report cards.</strong> A clean image of a report for sharing on social media.</li>
+<li><strong>Rule changelog.</strong> A public history of every change to the scoring rules.</li>
+</ol>
+<h2>7. Transparency principles</h2>
+<ul>
+<li><strong>Open methodology.</strong> The scoring rules are published on the site and in this document, and match the code.</li>
+<li><strong>Open code.</strong> The site is a static page; anyone can read the code that produces every score.</li>
+<li><strong>No paid placements.</strong> Ratings cannot be bought, and projects cannot pay to change their result.</li>
+<li><strong>No data collection.</strong> No accounts, no wallet connections, no tracking of searched addresses.</li>
+<li><strong>Neutral language.</strong> Findings describe what the data shows and avoid recommendations to buy or sell.</li>
+<li><strong>Corrections.</strong> Errors can be reported publicly via X, and rule changes will be documented.</li>
+</ul>
+<h2>8. Disclaimer</h2>
+<p>BluntX is provided free of charge, "as is", for informational purposes only. It is not financial, investment, legal or tax advice, and it does not recommend buying, selling or holding any asset. Scores are automated signals, not guarantees, and may be incomplete or inaccurate. Digital assets are highly volatile and you can lose all of the money you put in. Always do your own research and only invest what you can afford to lose.</p></main></body></html>
