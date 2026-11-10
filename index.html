@@ -4,20 +4,20 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Launchguard — Scan memecoins before you buy</title>
-  <meta name="description" content="Launchguard is a safety-first Solana memecoin scanner. Check new and trending coins, get a Safe, Risky or Rug score with the reasons, and get alerts when a dev sells or liquidity is pulled. Launching soon.">
+  <meta name="description" content="Launchguard is a browser extension for pump.fun. Turn it on for a tab to scan the coins on the page and see a Safe, Risky or Rug score with the reasons. Coming soon.">
   <meta name="theme-color" content="#07090f">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Launchguard">
   <meta property="og:title" content="Launchguard — Scan memecoins before you buy">
-  <meta property="og:description" content="A safety-first Solana memecoin scanner. Safe, Risky or Rug scores with reasons. Launching soon.">
+  <meta property="og:description" content="A browser extension for pump.fun. Safe, Risky or Rug scores with reasons. Coming soon.">
   <meta property="og:url" content="https://bluntx.fun/">
   <meta property="og:type" content="website">
   <meta property="og:image" content="https://bluntx.fun/og.png">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Launchguard — Scan memecoins before you buy">
-  <meta name="twitter:description" content="A safety-first Solana memecoin scanner. Launching soon.">
+  <meta name="twitter:description" content="A browser extension for pump.fun. Coming soon.">
   <meta name="twitter:image" content="https://bluntx.fun/og.png">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="icon" href="favicon.png" type="image/png" sizes="32x32">
@@ -34,7 +34,7 @@
     <nav>
       <a href="#features">Features</a>
       <a href="#safety">Safety checks</a>
-      <a href="#score">Risk score</a>
+      <a href="#install">Install</a>
     </nav>
   </header>
 
@@ -43,10 +43,11 @@
       <p class="tag">Launching soon</p>
       <img class="hero-logo" src="logo.svg" alt="Launchguard shield">
       <h1>Launchguard</h1>
-      <p class="lead">Scan new memecoins before you buy.</p>
-      <p class="sub">A safety-first Solana scanner for new and trending coins. See the risks, read the reasons, and get alerted when a dev sells or liquidity is pulled.</p>
+      <p class="lead">Scan the coins on a pump.fun tab before you buy.</p>
+      <p class="sub">Launchguard is a browser extension. You have pump.fun open, you turn it on for that tab, and it tells you about every coin on the page — Safe, Risky or Rug, with the reasons.</p>
       <div class="actions">
-        <a class="btn primary" href="#features">See what’s coming</a>
+        <a class="btn primary" href="launchguard-extension.zip" download>Download the prototype</a>
+        <a class="btn ghost" href="#install">How to load it</a>
       </div>
       <div class="scores" aria-hidden="true">
         <span class="pill safe">Safe</span>
@@ -56,72 +57,72 @@
     </section>
 
     <section id="features" class="section">
-      <h2>Built to help you look first</h2>
-      <p class="intro">Launchguard watches Solana memecoins and surfaces the facts that matter before you trade. The product is still being built — this is what it will cover.</p>
+      <h2>Built for a pump.fun tab</h2>
+      <p class="intro">The official store listing is still coming soon. A Chrome prototype is ready to load unpacked today. This is what it does.</p>
       <ul class="cards">
+        <li>
+          <div class="icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg>
+          </div>
+          <h3>On for this tab</h3>
+          <p>Open pump.fun, flip the Launchguard toggle, and it only runs on that tab.</p>
+        </li>
         <li>
           <div class="icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5M4 19l4-3 4 3 4-3 4 3V5L16 8l-4-3-4 3-4-3"/></svg>
           </div>
-          <h3>Live new and trending</h3>
-          <p>Track new and trending coins from Pump.fun, Raydium and Meteora in one place.</p>
-        </li>
-        <li>
-          <div class="icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16M7 16V9M12 16V5M17 16v-4"/></svg>
-          </div>
-          <h3>5m, 1h and 24h views</h3>
-          <p>Compare market cap, volume, trades and holders across short and longer windows.</p>
-        </li>
-        <li>
-          <div class="icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14c2-5 6-8 8-9 2 1 6 4 8 9-2 5-6 8-8 9-2-1-6-4-8-9z"/><circle cx="12" cy="14" r="2.2"/></svg>
-          </div>
-          <h3>Safety checks</h3>
-          <p>Dev and top-10 holdings, mint and freeze authority, honeypots, liquidity burned or locked, and socials.</p>
+          <h3>Finds coins on the page</h3>
+          <p>It reads coin cards and /coin/ links on the tab you already have open — no separate feed to babysit.</p>
         </li>
         <li>
           <div class="icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg>
           </div>
           <h3>Safe, Risky or Rug</h3>
-          <p>Every coin gets a clear risk score, with the reasons spelled out so you can decide for yourself.</p>
+          <p>Every coin it finds gets a badge and a score, with the reasons spelled out so you can decide for yourself.</p>
         </li>
         <li>
           <div class="icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a7 7 0 017 7c0 4-3 6.5-7 11-4-4.5-7-7-7-11a7 7 0 017-7z"/><path d="M12 10v2M12 15h.01"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14c2-5 6-8 8-9 2 1 6 4 8 9-2 5-6 8-8 9-2-1-6-4-8-9z"/><circle cx="12" cy="14" r="2.2"/></svg>
           </div>
-          <h3>Dev and liquidity alerts</h3>
-          <p>Get notified when a developer starts selling or when liquidity is pulled.</p>
+          <h3>Safety checks</h3>
+          <p>Mint and freeze authority, top-holder concentration, liquidity locked or still on the curve, market cap, volume, age and socials.</p>
         </li>
         <li>
           <div class="icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16l5-5 3 3 8-8"/><path d="M15 6h4v4"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 8h8M8 12h5"/></svg>
           </div>
-          <h3>A chart for each coin</h3>
-          <p>Open any token and see price action alongside the safety details, not in a separate tab.</p>
+          <h3>A list of every coin</h3>
+          <p>An on-page panel and a Chrome side panel list every coin found on the tab, with its score and reasons.</p>
+        </li>
+        <li>
+          <div class="icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16M7 16V9M12 16V5M17 16v-4"/></svg>
+          </div>
+          <h3>Public data, no API key</h3>
+          <p>The prototype scores from DexScreener and RugCheck’s public APIs. It does not need your wallet or a paid key.</p>
         </li>
       </ul>
     </section>
 
     <section id="safety" class="section">
       <h2>What we check</h2>
-      <p class="intro">The same red flags traders already hunt for, gathered into one scan.</p>
+      <p class="intro">The prototype uses public DexScreener and RugCheck fields only. If a field is missing, it is skipped, not invented.</p>
       <ul class="checks">
-        <li>Developer holdings</li>
-        <li>Top-10 wallet concentration</li>
-        <li>Developer selling activity</li>
-        <li>Honeypot behavior</li>
         <li>Mint authority</li>
         <li>Freeze authority</li>
-        <li>Liquidity burned or locked</li>
+        <li>Top-holder concentration</li>
+        <li>RugCheck risk flags</li>
+        <li>Liquidity locked or still on the curve</li>
+        <li>Market cap and 24h volume</li>
+        <li>Pair age</li>
         <li>Linked socials</li>
       </ul>
     </section>
 
     <section id="score" class="section score-section">
       <h2>A score you can actually read</h2>
-      <p class="intro">Launchguard will rate each coin Safe, Risky or Rug and show why — not just a number with no explanation.</p>
+      <p class="intro">Each coin is rated Safe, Risky or Rug from those public fields, and the badge and side panel show why — not just a number with no explanation.</p>
       <ul class="score-cards">
         <li>
           <span class="pill safe">Safe</span>
@@ -138,9 +139,36 @@
       </ul>
     </section>
 
+    <section id="install" class="section">
+      <h2>Load the prototype in Chrome</h2>
+      <p class="intro">The official store listing is coming soon. Until then you can load the unpacked extension yourself. It is free, and it is not published to any web store.</p>
+      <ol class="steps">
+        <li>
+          <span class="n">1</span>
+          <div>
+            <h3>Download the zip</h3>
+            <p>Get <a href="launchguard-extension.zip" download>launchguard-extension.zip</a> and unzip it on your computer.</p>
+          </div>
+        </li>
+        <li>
+          <span class="n">2</span>
+          <div>
+            <h3>Load it unpacked</h3>
+            <p>Open chrome://extensions, turn on Developer mode, click Load unpacked, and choose the unzipped folder.</p>
+          </div>
+        </li>
+        <li>
+          <span class="n">3</span>
+          <div>
+            <h3>Turn it on for a pump.fun tab</h3>
+            <p>Open pump.fun, click the Launchguard icon, and switch it on. Coins on that page get a badge and a list of scores.</p>
+          </div>
+        </li>
+      </ol>
+    </section>
     <section class="section soon">
-      <h2>Launching soon</h2>
-      <p>Launchguard is in development. The scanner is not live yet, and nothing here is a live feed or a signal to trade.</p>
+      <h2>Coming soon</h2>
+      <p>A store-ready Launchguard release is still on the way. This prototype is for trying the scanner. It is not a live trade signal, and a score is not a guarantee.</p>
     </section>
   </main>
 
@@ -149,7 +177,7 @@
       <img src="logo.svg" alt="" width="20" height="20">
       Launchguard
     </p>
-    <p class="small">Launchguard is a memecoin safety scanner in development. It is not financial advice, and a score is not a guarantee. Crypto is volatile. Only spend what you can afford to lose, and always do your own research.</p>
+    <p class="small">Launchguard is a pump.fun browser extension in development. It is not financial advice, and a score is not a guarantee. Crypto is volatile. Only spend what you can afford to lose, and always do your own research.</p>
     <p class="small">© <span id="yr"></span> Launchguard · bluntx.fun</p>
   </footer>
   <script>

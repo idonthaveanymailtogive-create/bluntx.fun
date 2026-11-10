@@ -1,4 +1,4 @@
-const CACHE = "launchguard-v1";
+const CACHE = "launchguard-v2";
 const ASSETS = [
   "/",
   "/index.html",

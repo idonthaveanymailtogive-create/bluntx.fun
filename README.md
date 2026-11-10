@@ -1,9 +1,9 @@
 # Launchguard
 
-Static landing page for Launchguard, a safety-first Solana memecoin scanner, at https://bluntx.fun
+Landing page for Launchguard, a browser extension that scans coins on a pump.fun tab, at https://bluntx.fun
 
-The product is launching soon. This page describes planned features only — there is no live scanner, signup form, or trade signal.
+The official store listing is coming soon. A Chrome Manifest V3 prototype is offered as `launchguard-extension.zip` (load it unpacked; it is not published to any web store). Scoring rules and API limits are documented inside the zip in `README.md`.
 
-The site is a lightweight PWA (manifest, icons, and a service worker that caches core files for offline use).
+The site is also a lightweight PWA.
 
-Deploy: `index.html`, `style.css`, `logo.svg`, `favicon.svg`, `favicon.png`, `apple-touch-icon.png`, `og.png`, `icon-192.png`, `icon-512.png`, `icon-512-maskable.png`, `manifest.webmanifest`, `sw.js`, and `CNAME` (bluntx.fun).
+Deploy includes: `index.html`, `style.css`, `logo.svg`, favicons, PWA icons and `manifest.webmanifest`, `sw.js`, `og.png`, `launchguard-extension.zip`, and `CNAME` (bluntx.fun).
