@@ -13,7 +13,7 @@
   --rad:18px;
 }
 *{box-sizing:border-box}
-html{scroll-behavior:smooth}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{
   margin:0;
   color:var(--text);
@@ -24,12 +24,17 @@ body{
     var(--bg);
   font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   -webkit-font-smoothing:antialiased;
+  min-width:0;
+  overflow-x:hidden;
 }
 a{color:var(--acc)}
 .nav{
   position:sticky;top:0;z-index:5;
   display:flex;align-items:center;justify-content:space-between;gap:12px;
   padding:12px 18px;
+  padding-top:max(12px,env(safe-area-inset-top));
+  padding-left:max(18px,env(safe-area-inset-left));
+  padding-right:max(18px,env(safe-area-inset-right));
   background:rgba(7,9,15,.82);
   backdrop-filter:blur(14px);
   border-bottom:1px solid var(--line);
@@ -40,10 +45,14 @@ a{color:var(--acc)}
   font-weight:800;font-size:18px;letter-spacing:-.03em;
 }
 .logo-nav{width:32px;height:32px;display:block}
-.nav nav{display:flex;gap:16px;flex-wrap:wrap}
-.nav nav a{color:var(--mut);text-decoration:none;font-size:14px}
+.nav nav{display:flex;gap:8px 16px;flex-wrap:wrap;align-items:center}
+.nav nav a{
+  color:var(--mut);text-decoration:none;font-size:14px;
+  min-height:44px;padding:8px 4px;
+  display:inline-flex;align-items:center;
+}
 .nav nav a:hover{color:var(--text)}
-main{max-width:980px;margin:0 auto;padding:0 18px 32px}
+main{max-width:980px;margin:0 auto;padding:0 max(18px,env(safe-area-inset-right)) 32px max(18px,env(safe-area-inset-left))}
 .hero{padding:72px 0 48px;text-align:center}
 .hero-logo{
   width:96px;height:96px;
@@ -148,7 +157,8 @@ h1{
 .soon p{margin:0 auto;max-width:32em;color:var(--mut)}
 .foot{
   border-top:1px solid var(--line);
-  padding:28px 18px 48px;text-align:center;
+  padding:28px max(18px,env(safe-area-inset-right)) max(48px,calc(28px + env(safe-area-inset-bottom))) max(18px,env(safe-area-inset-left));
+  text-align:center;
 }
 .brand-foot{
   display:inline-flex;align-items:center;gap:8px;
@@ -156,17 +166,41 @@ h1{
 }
 .brand-foot img{display:block}
 .small{color:var(--mut);font-size:13px;max-width:640px;margin:10px auto}
+/* Phones: hide the text nav so the header stays one line */
+@media(max-width:639px){
+  .nav nav{display:none}
+}
+
+/* Large phones / small tablets in portrait */
+@media(min-width:640px) and (max-width:899px){
+  .nav nav{gap:6px 14px}
+  .hero{padding:80px 0 52px}
+  .hero-logo{width:88px;height:88px}
+}
+
+/* Tablet portrait and small laptops: two-up cards */
 @media(min-width:700px){
   .cards{grid-template-columns:repeat(2,1fr)}
-  .score-cards,.checks{grid-template-columns:repeat(3,1fr)}
+  .score-cards{grid-template-columns:repeat(3,1fr)}
   .checks{grid-template-columns:repeat(2,1fr)}
-  .hero{padding:96px 0 64px}
+  .hero{padding:88px 0 60px}
 }
+
+/* Tablet landscape and desktop */
 @media(min-width:980px){
   .cards{grid-template-columns:repeat(3,1fr)}
   .checks{grid-template-columns:repeat(4,1fr)}
+  .hero{padding:96px 0 64px}
+  .hero-logo{width:96px;height:96px}
 }
 
-@media(max-width:640px){
-  .nav nav{display:none}
+/* Short landscape (phone or tablet flipped) — keep the hero on one screen */
+@media(max-height:500px) and (orientation:landscape){
+  .hero{padding:36px 0 28px}
+  .hero-logo{width:56px;height:56px;margin-bottom:12px}
+  h1{font-size:clamp(36px,12vh,64px)}
+  .lead{font-size:clamp(18px,4.2vh,24px)}
+  .sub{margin-top:8px}
+  .actions{margin-top:16px}
+  .scores{margin-top:16px}
 }
