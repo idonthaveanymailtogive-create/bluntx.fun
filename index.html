@@ -24,6 +24,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="BluntX">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="preload" href="/fonts/Inter.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/Fraunces.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/style.css">
   <script src="/framebuster.js"></script>
   <script src="/core.js" defer></script>
@@ -132,40 +134,47 @@
             <em>Illustrative example</em>
           </div>
           <div class="mock-body">
-            <div class="verdict yellow">
-              <div class="score"><b>33</b><small>risk pts</small></div>
-              <div><h3>Caution</h3><p>Some risk signals found. Review the findings below.</p></div>
+            <div class="rp-tok">
+              <span class="rp-ph" aria-hidden="true">EX</span>
+              <div><p class="rp-eyebrow">Token risk report</p><p class="rp-name">Example Token <span class="mut">($EXAMPLE)</span></p><span class="chip">Solana</span><span class="chip">PumpSwap</span></div>
             </div>
-            <div class="meter-wrap">
-              <svg class="meter" viewBox="0 0 300 40" role="img" aria-label="Illustrative score: 33 risk points, Caution">
-                <title>Illustrative score: 33 risk points, Caution</title>
-                <defs>
-                  <clipPath id="meter-clip-ex"><rect x="8" y="26" width="284" height="6" rx="3"/></clipPath>
-                </defs>
-                <rect class="meter-bed" x="8" y="26" width="284" height="6" rx="3"/>
-                <g clip-path="url(#meter-clip-ex)">
-                  <rect class="meter-zone-g" x="8" y="26" width="69.6" height="6"/>
-                  <rect class="meter-zone-y" x="77.6" y="26" width="85.2" height="6"/>
-                  <rect class="meter-zone-r" x="162.8" y="26" width="129.2" height="6"/>
-                </g>
-                <g transform="translate(101.7,0)">
-                  <path class="meter-needle" d="M0 16 L4 26 L0 23.5 L-4 26 Z"/>
-                </g>
-                <text class="meter-lab" x="8" y="12">Low</text>
-                <text class="meter-lab" x="77.6" y="12">Caution</text>
-                <text class="meter-lab" x="162.8" y="12">High</text>
-              </svg>
+            <div class="rp-sum yellow">
+              <div class="rp-gauge">
+                <svg viewBox="0 0 200 122" role="img" aria-label="Illustrative score: 45 risk points, Caution">
+                  <title>Illustrative score: 45 risk points, Caution</title>
+                  <path class="g-zone ok" d="M20 100 A80 80 0 0 1 43.43 43.43"/>
+                  <path class="g-zone warn" d="M43.43 43.43 A80 80 0 0 1 112.51 20.98"/>
+                  <path class="g-zone bad" d="M112.51 20.98 A80 80 0 0 1 180.00 100.00"/>
+                  <path class="g-val" d="M20 100 A80 80 0 0 1 87.49 20.98"/>
+                  <circle class="g-dot" cx="87.49" cy="20.98" r="7"/>
+                  <text class="g-tick" x="20" y="118" text-anchor="middle">0</text>
+                  <text class="g-tick" x="27" y="36" text-anchor="middle">25</text>
+                  <text class="g-tick" x="124" y="11" text-anchor="middle">55</text>
+                  <text class="g-tick" x="180" y="118" text-anchor="middle">100+</text>
+                  <text class="g-num" x="100" y="96" text-anchor="middle">45</text>
+                  <text class="g-of" x="100" y="116" text-anchor="middle">RISK POINTS</text>
+                </svg>
+              </div>
+              <div>
+                <p class="rp-verdict">Caution <span class="rp-badge warn">25–54</span></p>
+                <p class="rp-lede">Some risk signals found. Review the findings below before you buy.</p>
+                <ol class="rp-why" aria-label="Main reasons">
+                  <li><span class="rp-n warn">1</span><span>A group of linked wallets holds 4.2% of the supply.</span></li>
+                  <li><span class="rp-n warn">2</span><span>Low liquidity ($18.4K): larger sales will move the price.</span></li>
+                  <li><span class="rp-n warn">3</span><span>Early-stage token: trading started 2 days ago.</span></li>
+                </ol>
+              </div>
             </div>
-            <div class="tok"><div><b>Example Token ($EXAMPLE)</b> <span class="chip">Solana</span><br><code>Illustrative only</code></div></div>
-            <ul class="reasons">
-              <li class="good"><span class="ic">✓</span><span>Mint authority revoked: supply is fixed.</span></li>
-              <li class="good"><span class="ic">✓</span><span>Freeze authority revoked.</span></li>
-              <li class="warn"><span class="ic">!</span><span>Early-stage token: trading started 3 days ago.</span><span class="pts">+8</span></li>
-              <li class="warn"><span class="ic">!</span><span>Top 10 wallets hold 41% of supply.</span><span class="pts">+15</span></li>
-              <li class="warn"><span class="ic">!</span><span>Very low trading volume in 24h.</span><span class="pts">+10</span></li>
-            </ul>
+            <article class="rp-card warn">
+              <div class="rp-card-head"><h3>Linked wallets &amp; snipers</h3><span class="rp-badge warn">Caution</span></div>
+              <ul class="rp-f">
+                <li><span class="rp-ic warn" aria-hidden="true">!</span><span>A group of linked wallets holds 4.2% of the supply.</span><span class="rp-pts">+12</span></li>
+                <li><span class="rp-ic warn" aria-hidden="true">!</span><span>6 of the 20 largest wallets hold almost identical amounts, a common sign of a bundled launch.</span><span class="rp-pts">+10</span></li>
+                <li><span class="rp-ic good" aria-hidden="true">✓</span><span>No shared funding wallet found among the linked holders.</span><span></span></li>
+              </ul>
+            </article>
           </div>
-          <figcaption>Illustration of the report layout. Run a check to see live data.</figcaption>
+          <figcaption>Illustration of the report layout with a made-up token. Run a check to see live data.</figcaption>
         </figure>
       </div>
     </section>
