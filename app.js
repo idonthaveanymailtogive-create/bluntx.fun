@@ -460,6 +460,42 @@
     (kids || []).forEach(function (c) { if (c != null) n.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); });
     return n;
   }
+  function svgEl(name, attrs) {
+    var n = document.createElementNS('http://www.w3.org/2000/svg', name);
+    if (attrs) Object.keys(attrs).forEach(function (k) {
+      if (k === 'text') n.textContent = attrs[k]; else n.setAttribute(k, attrs[k]);
+    });
+    return n;
+  }
+  // Risk rail: SVG attributes only (no element.style), so it stays compatible with style-src 'self'.
+  function buildMeter(points, rating) {
+    var pts = Math.max(0, Number(points) || 0);
+    var visual = Math.min(100, pts);
+    var W = 284, X = 8, Y = 26, H = 6;
+    var nx = X + (visual / 100) * W;
+    var gW = (24.5 / 100) * W, yW = (30 / 100) * W, rW = W - gW - yW;
+    var clipId = 'meter-clip-' + Math.random().toString(36).slice(2, 9);
+    var svg = svgEl('svg', { class: 'meter', viewBox: '0 0 300 40', role: 'img', 'aria-label': pts + ' risk points, ' + rating });
+    svg.appendChild(svgEl('title', { text: pts + ' risk points, ' + rating }));
+    var defs = svgEl('defs');
+    var clip = svgEl('clipPath', { id: clipId });
+    clip.appendChild(svgEl('rect', { x: String(X), y: String(Y), width: String(W), height: String(H), rx: '3' }));
+    defs.appendChild(clip);
+    svg.appendChild(defs);
+    svg.appendChild(svgEl('rect', { class: 'meter-bed', x: String(X), y: String(Y), width: String(W), height: String(H), rx: '3' }));
+    var zones = svgEl('g', { 'clip-path': 'url(#' + clipId + ')' });
+    zones.appendChild(svgEl('rect', { class: 'meter-zone-g', x: String(X), y: String(Y), width: String(gW), height: String(H) }));
+    zones.appendChild(svgEl('rect', { class: 'meter-zone-y', x: String(X + gW), y: String(Y), width: String(yW), height: String(H) }));
+    zones.appendChild(svgEl('rect', { class: 'meter-zone-r', x: String(X + gW + yW), y: String(Y), width: String(rW), height: String(H) }));
+    svg.appendChild(zones);
+    var needle = svgEl('g', { transform: 'translate(' + nx.toFixed(1) + ',0)' });
+    needle.appendChild(svgEl('path', { class: 'meter-needle', d: 'M0 16 L4 26 L0 23.5 L-4 26 Z' }));
+    svg.appendChild(needle);
+    svg.appendChild(svgEl('text', { class: 'meter-lab', x: String(X), y: '12', text: 'Low' }));
+    svg.appendChild(svgEl('text', { class: 'meter-lab', x: String(X + gW), y: '12', text: 'Caution' }));
+    svg.appendChild(svgEl('text', { class: 'meter-lab', x: String(X + gW + yW), y: '12', text: 'High' }));
+    return el('div', { class: 'meter-wrap' }, [svg]);
+  }
   // Only http(s) links to known hosts; anything else is dropped.
   var LINK_HOSTS = /^(dexscreener\.com|rugcheck\.xyz|pump\.fun|gopluslabs\.io|honeypot\.is|solscan\.io|etherscan\.io|bscscan\.com|basescan\.org|arbiscan\.io|polygonscan\.com|optimistic\.etherscan\.io|snowtrace\.io|sonicscan\.org|blastscan\.io|lineascan\.build|tronscan\.org|suiscan\.xyz|tonviewer\.com|explorer\.aptoslabs\.com)$/;
   function safeUrl(u) {
@@ -498,6 +534,7 @@
         el('p', { text: t[1] })
       ])
     ]));
+    frag.appendChild(buildMeter(s.points, t[0]));
 
     var others = (d.chainsSeen || []).filter(function (c) { return c !== d.chain; });
     var tokKids = [];
@@ -582,6 +619,91 @@
   }
   var CHAIN_OPTS = [];
 
+
+  function initDrawer() {
+    var btn = document.getElementById('menu-btn');
+    var drawer = document.getElementById('drawer');
+    var backdrop = document.getElementById('backdrop');
+    var closeBtn = document.getElementById('drawer-close');
+    if (!btn || !drawer || !backdrop || !closeBtn) return;
+    var lastFocus = null;
+    var open = false;
+
+    function focusables() {
+      return Array.prototype.slice.call(drawer.querySelectorAll('a[href], button:not([disabled])'));
+    }
+    function setOpen(next) {
+      if (next === open) return;
+      open = next;
+      drawer.classList.toggle('is-open', open);
+      backdrop.classList.toggle('is-open', open);
+      document.documentElement.classList.toggle('drawer-open', open);
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      btn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+      drawer.setAttribute('aria-hidden', open ? 'false' : 'true');
+      backdrop.setAttribute('aria-hidden', open ? 'false' : 'true');
+      if (open) {
+        lastFocus = document.activeElement;
+        document.addEventListener('keydown', onKey);
+        requestAnimationFrame(function () {
+          requestAnimationFrame(function () { closeBtn.focus(); });
+        });
+      } else {
+        document.removeEventListener('keydown', onKey);
+        if (lastFocus && typeof lastFocus.focus === 'function') lastFocus.focus();
+      }
+    }
+    function onKey(e) {
+      if (e.key === 'Escape') { e.preventDefault(); setOpen(false); return; }
+      if (e.key !== 'Tab') return;
+      var list = focusables();
+      if (!list.length) return;
+      var first = list[0], last = list[list.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+
+    btn.addEventListener('click', function () { setOpen(!open); });
+    closeBtn.addEventListener('click', function () { setOpen(false); });
+    backdrop.addEventListener('click', function () { setOpen(false); });
+    drawer.addEventListener('click', function (e) {
+      var a = e.target.closest && e.target.closest('a');
+      if (a) setOpen(false);
+    });
+    window.addEventListener('resize', function () {
+      if (open && window.matchMedia('(min-width: 760px)').matches) setOpen(false);
+    });
+
+    var ids = ['how-it-works', 'checks', 'how', 'extension', 'faq'];
+    var links = document.querySelectorAll('.links-nav a, .drawer-nav a');
+    var sections = ids.map(function (id) { return document.getElementById(id); }).filter(Boolean);
+    function setCurrent(id) {
+      Array.prototype.forEach.call(links, function (a) {
+        var href = a.getAttribute('href') || '';
+        var match = !!(id && (href === '#' + id));
+        a.classList.toggle('is-current', match);
+        if (match) a.setAttribute('aria-current', 'location');
+        else a.removeAttribute('aria-current');
+      });
+    }
+    function updateCurrent() {
+      var active = null;
+      sections.forEach(function (sec) {
+        if (sec.getBoundingClientRect().top <= 120) active = sec.id;
+      });
+      setCurrent(active);
+    }
+    if (sections.length) {
+      var ticking = false;
+      window.addEventListener('scroll', function () {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(function () { updateCurrent(); ticking = false; });
+      }, { passive: true });
+      updateCurrent();
+    }
+  }
+
   if (typeof document !== 'undefined') {
     // Frame-buster: frame-ancestors cannot be set from a meta tag on GitHub Pages.
     if (window.top !== window.self) {
@@ -591,6 +713,7 @@
     if ('serviceWorker' in navigator) window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function () {}); });
     document.addEventListener('DOMContentLoaded', function () {
       var yr = document.getElementById('yr'); if (yr) yr.textContent = String(new Date().getFullYear());
+      initDrawer();
       var input = document.getElementById('mint'), sel = document.getElementById('chain');
       if (!input || !sel) return;
       CHAIN_OPTS = Array.prototype.map.call(sel.options, function (o) { return o.value; });
