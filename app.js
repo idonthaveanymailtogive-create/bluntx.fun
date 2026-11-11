@@ -587,7 +587,7 @@
     var out = document.getElementById('out'), btn = document.getElementById('go');
     raw = String(raw || '').trim();
     if (CHAIN_OPTS.indexOf(chainChoice) < 0) chainChoice = 'auto';
-    if (!raw || raw.length > MAX_INPUT) { msg(out, 'err', 'Enter a token address or a DexScreener / pump.fun link.'); return; }
+    if (!raw || raw.length > MAX_INPUT) { msg(out, 'err', 'Enter a token address or a token page link.'); return; }
     var addr = extract(raw);
     var dl = await resolveDexLink(raw);
     if (dl && detect(dl.addr)) {
@@ -595,7 +595,7 @@
       if (chainChoice === 'auto' && CHAIN_OPTS.indexOf(dl.chain) >= 0) { chainChoice = dl.chain; document.getElementById('chain').value = dl.chain; }
       document.getElementById('mint').value = addr;
     }
-    if (!detect(addr)) { msg(out, 'err', 'This does not appear to be a valid token address. Enter a contract or mint address (Solana, 0x…, T…, EQ…, or 0x…::module::COIN), or a DexScreener / pump.fun link.'); return; }
+    if (!detect(addr)) { msg(out, 'err', 'This does not appear to be a valid token address. Enter a contract or mint address (Solana, 0x…, T…, EQ…, or 0x…::module::COIN), or a token page link.'); return; }
     btn.disabled = true;
     out.closest('.result').hidden = false;
     msg(out, 'loading', 'Analyzing token… detecting the chain and retrieving public data.', true);
@@ -674,34 +674,43 @@
       if (open && window.matchMedia('(min-width: 760px)').matches) setOpen(false);
     });
 
-    var ids = ['how-it-works', 'checks', 'how', 'extension', 'faq'];
+    markCurrentNav();
+  }
+
+  function markCurrentNav() {
+    var path = location.pathname;
+    if (!path || path === '/index.html') path = '/';
     var links = document.querySelectorAll('.links-nav a, .drawer-nav a');
-    var sections = ids.map(function (id) { return document.getElementById(id); }).filter(Boolean);
-    function setCurrent(id) {
-      Array.prototype.forEach.call(links, function (a) {
-        var href = a.getAttribute('href') || '';
-        var match = !!(id && (href === '#' + id));
-        a.classList.toggle('is-current', match);
-        if (match) a.setAttribute('aria-current', 'location');
-        else a.removeAttribute('aria-current');
-      });
-    }
-    function updateCurrent() {
-      var active = null;
-      sections.forEach(function (sec) {
-        if (sec.getBoundingClientRect().top <= 120) active = sec.id;
-      });
-      setCurrent(active);
-    }
-    if (sections.length) {
-      var ticking = false;
-      window.addEventListener('scroll', function () {
-        if (ticking) return;
-        ticking = true;
-        requestAnimationFrame(function () { updateCurrent(); ticking = false; });
-      }, { passive: true });
-      updateCurrent();
-    }
+    Array.prototype.forEach.call(links, function (a) {
+      var href = a.getAttribute('href') || '';
+      a.classList.remove('is-current');
+      a.removeAttribute('aria-current');
+      if (!href || href.charAt(0) === '#' || /^(https?:)?\/\//i.test(href)) return;
+      var linkPath;
+      try { linkPath = new URL(href, location.origin).pathname; } catch (e) { return; }
+      if (linkPath === '/index.html') linkPath = '/';
+      if (linkPath === path) {
+        a.classList.add('is-current');
+        a.setAttribute('aria-current', 'page');
+      }
+    });
+  }
+
+  var SECTION_PAGES = {
+    'how-it-works': '/how.html',
+    'checks': '/how.html',
+    'how': '/how.html#scoring',
+    'extension': '/extension.html',
+    'faq': '/faq.html'
+  };
+
+  function redirectLegacyHash() {
+    var raw;
+    try { raw = decodeURIComponent(location.hash.slice(1)); } catch (e) { return false; }
+    var dest = SECTION_PAGES[raw];
+    if (!dest) return false;
+    location.replace(dest);
+    return true;
   }
 
   if (typeof document !== 'undefined') {
@@ -714,6 +723,7 @@
     document.addEventListener('DOMContentLoaded', function () {
       var yr = document.getElementById('yr'); if (yr) yr.textContent = String(new Date().getFullYear());
       initDrawer();
+      if (redirectLegacyHash()) return;
       var input = document.getElementById('mint'), sel = document.getElementById('chain');
       if (!input || !sel) return;
       CHAIN_OPTS = Array.prototype.map.call(sel.options, function (o) { return o.value; });
