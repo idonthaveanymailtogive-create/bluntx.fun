@@ -6,11 +6,11 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
   <meta name="referrer" content="no-referrer">
   <title>Browser extension — BluntX</title>
-  <meta name="description" content="The BluntX browser extension (beta) adds Low risk, Caution or High risk badges to coins on pump.fun, using the same points model as the checker.">
+  <meta name="description" content="The BluntX browser extension (beta) adds Low risk, Caution or High risk badges to coins on popular trading and explorer sites, using the same points model as the checker.">
   <meta name="theme-color" content="#07090a">
   <meta property="og:type" content="website">
   <meta property="og:title" content="BluntX browser extension">
-  <meta property="og:description" content="The BluntX browser extension (beta) adds Low risk, Caution or High risk badges to coins on pump.fun, using the same points model as the checker.">
+  <meta property="og:description" content="The BluntX browser extension (beta) adds Low risk, Caution or High risk badges to coins on popular trading and explorer sites, using the same points model as the checker.">
   <meta property="og:url" content="https://bluntx.fun/extension.html">
   <meta property="og:image" content="https://bluntx.fun/og.png">
   <meta name="twitter:card" content="summary_large_image">
@@ -82,10 +82,10 @@
       <div class="card ext-card">
         <div class="ext-copy">
           <p class="kicker"><svg class="ico" aria-hidden="true"><use href="#i-puzzle"/></svg> Browser extension (beta)</p>
-          <h1>Ratings on pump.fun, right in the tab.</h1>
-          <p class="sub">Switch on the BluntX extension in a pump.fun tab and each coin on the page gets a <b class="g">Low risk</b>, <b class="y">Caution</b> or <b class="r">High risk</b> badge with its risk score. The side panel lists the findings behind every rating. It uses the same points model as the Solana checker.</p>
+          <h1>Ratings on the trading sites you already use.</h1>
+          <p class="sub">Switch on the BluntX extension in a supported tab and each coin on the page gets a <b class="g">Low risk</b>, <b class="y">Caution</b> or <b class="r">High risk</b> badge with its risk score. The side panel lists the findings behind every rating. It uses the same points model as the checker. On any other site, paste an address into the side panel, or select an address and choose Check with BluntX.</p>
           <div class="btn-row">
-            <a class="cta" href="/bluntx-extension.zip" download>Download v0.1 (.zip)</a>
+            <a class="cta" href="/bluntx-extension.zip" download>Download v0.2 (.zip)</a>
             <a class="btn-secondary" href="/how.html#scoring">See the scoring rules</a>
           </div>
           <p class="small-note">Beta, not yet on the Chrome Web Store. Desktop Chrome and other Chromium browsers. No wallet access, no transactions.</p>
@@ -95,8 +95,38 @@
           <li>Open <code>chrome://extensions</code> in Chrome.</li>
           <li>Turn on <b>Developer mode</b> (top right).</li>
           <li>Click <b>Load unpacked</b> and select the unzipped <code>bluntx-extension</code> folder.</li>
-          <li>Open pump.fun, click the BluntX icon and switch <b>On for this tab</b>.</li>
+          <li>Open a supported site, click the BluntX icon and switch <b>On for this tab</b>.</li>
         </ol>
+      </div>
+    </section>
+
+    <section class="section wrap" id="supported">
+      <div class="card">
+        <p class="kicker">Supported sites</p>
+        <h2>Auto-scan these pages, or paste an address anywhere.</h2>
+        <p class="sub">When you switch the extension on for a tab, it reads token or contract addresses from the page and the URL. BluntX is independent and is not affiliated with these sites, nor with DexScreener or RugCheck, which supply the public data behind each rating.</p>
+        <ul class="site-list">
+          <li>pump.fun</li>
+          <li>Birdeye (birdeye.so and birdeyeterminal.com)</li>
+          <li>GMGN (gmgn.ai)</li>
+          <li>Photon (photon-sol.tinyastro.io)</li>
+          <li>BullX (bullx.io and neo.bullx.io)</li>
+          <li>Axiom (axiom.trade)</li>
+          <li>Raydium (raydium.io)</li>
+          <li>Jupiter (jup.ag)</li>
+          <li>Solscan (solscan.io)</li>
+          <li>DexScreener (dexscreener.com)</li>
+          <li>Moonshot (moonshot.com)</li>
+          <li>letsbonk.fun</li>
+          <li>Uniswap (app.uniswap.org)</li>
+          <li>Etherscan, BscScan and Basescan</li>
+          <li>Four.meme</li>
+          <li>DEXTools (dextools.io)</li>
+          <li>GeckoTerminal</li>
+          <li>CoinGecko token pages, when a contract address is present</li>
+          <li>RugCheck (rugcheck.xyz)</li>
+        </ul>
+        <p class="small-note">On other sites, open the side panel and paste an address, or select an address and choose Check with BluntX. Auto-scan is not available there. BullX currently shows trading as disabled on its own site; address checks still work if a token page is open.</p>
       </div>
     </section>
   </main>

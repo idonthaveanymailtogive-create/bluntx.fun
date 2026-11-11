@@ -19,13 +19,13 @@ If something claiming to be BluntX asks for any of the above, it is not BluntX.
 - Address input is length-limited and validated against strict per-chain formats before any request is made.
 - Frame-busting script to prevent clickjacking (GitHub Pages cannot send a `frame-ancestors` header).
 - The service worker caches only the site's own files and never intercepts API requests.
-- HTTPS: enforcement will be switched on as soon as GitHub Pages issues the certificate for bluntx.fun.
+- HTTPS is issued and enforced on bluntx.fun.
 
 ## Browser extension
 
 - Manifest V3, no remote code, extension-page CSP `script-src 'self'; object-src 'none'`.
-- Permissions: `storage`, `scripting`, `sidePanel` only. Host access is limited to pump.fun, api.dexscreener.com and api.rugcheck.xyz.
-- It reads coin links on a pump.fun tab you switch on, and never touches wallets or transactions.
+- Permissions: `storage`, `scripting`, `sidePanel` and `contextMenus`. Host access is limited to the supported trading and explorer sites listed on /extension.html, plus api.dexscreener.com and api.rugcheck.xyz.
+- It reads token or contract addresses on a supported tab you switch on, or from a pasted or selected address, and never touches wallets or transactions. Page content and API data are inserted as text, never as HTML.
 
 ## Reporting a vulnerability
 

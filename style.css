@@ -262,3 +262,17 @@ code{font:13px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--bg2)
 .docs-card .links a.cta:hover{color:#07110a;border:0;background:var(--grad)}
 .docs-card .links a.btn-secondary{color:var(--text);padding:12px 18px;font-weight:700}
 .docs-card .links a.btn-secondary:hover{color:var(--acc)}
+
+.site-list{
+  display:grid;gap:8px 24px;margin:22px 0 0;padding:0;
+  list-style:none;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  color:var(--text);font-size:15px;
+}
+.site-list li{
+  padding:8px 0 8px 14px;border-bottom:1px solid var(--line);
+  position:relative;
+}
+.site-list li::before{
+  content:"";position:absolute;left:0;top:16px;width:6px;height:6px;border-radius:50%;
+  background:var(--acc);
+}
