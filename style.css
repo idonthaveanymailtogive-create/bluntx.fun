@@ -276,3 +276,14 @@ code{font:13px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--bg2)
   content:"";position:absolute;left:0;top:16px;width:6px;height:6px;border-radius:50%;
   background:var(--acc);
 }
+/* checker v2: data confidence + main pool */
+.conf{margin:12px 0 4px;padding:12px 14px;border-radius:14px;border:1px solid var(--line2);background:var(--panel)}
+.conf-head{font-size:14.5px}
+.conf p{margin:6px 0 0;color:var(--mut);font-size:13.5px}
+.conf-high{border-color:rgba(34,229,132,.45)}
+.conf-medium{border-color:rgba(255,210,63,.45)}
+.conf-low{border-color:rgba(255,77,94,.5)}
+.conf .retry{margin-top:10px;font:inherit;font-size:13px;padding:7px 12px;border-radius:10px;border:1px solid var(--line2);background:transparent;color:var(--text);cursor:pointer}
+.conf .retry:hover{border-color:var(--acc);color:var(--acc)}
+.pool{display:flex;flex-direction:column;gap:2px;margin:8px 0 0;padding:10px 14px;border-radius:14px;border:1px solid var(--line);font-size:14px}
+.pool small{color:var(--mut);font-size:12px}

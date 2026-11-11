@@ -92,14 +92,14 @@
       <p class="kicker">What we check</p>
       <h2>The signals that matter, in one report.</h2>
       <div class="grid4">
-        <div class="card feat"><svg class="ico lg" aria-hidden="true"><use href="#i-alert"/></svg><h3>Honeypot and taxes</h3><p>Sell simulations and buy/sell tax on EVM chains and Tron.</p></div>
-        <div class="card feat"><svg class="ico lg" aria-hidden="true"><use href="#i-key"/></svg><h3>Mint permission</h3><p>Whether new supply can still be created, diluting existing holders.</p></div>
-        <div class="card feat"><svg class="ico lg" aria-hidden="true"><use href="#i-freeze"/></svg><h3>Freeze authority</h3><p>Solana tokens whose balances can be frozen, blocking transfers or sales.</p></div>
-        <div class="card feat"><svg class="ico lg" aria-hidden="true"><use href="#i-code"/></svg><h3>Owner permissions</h3><p>Balance edits, hidden owners, blacklists, pausing, adjustable taxes and unverified code.</p></div>
-        <div class="card feat"><svg class="ico lg" aria-hidden="true"><use href="#i-users"/></svg><h3>Holder concentration</h3><p>Share held by the top 10 wallets, excluding identified pools and bonding curves.</p></div>
-        <div class="card feat"><svg class="ico lg" aria-hidden="true"><use href="#i-drop"/></svg><h3>Liquidity</h3><p>Pool depth and price impact, LP lock status, and bonding-curve market cap.</p></div>
-        <div class="card feat"><svg class="ico lg" aria-hidden="true"><use href="#i-clock"/></svg><h3>Token age</h3><p>How long the token has traded. Newly launched tokens carry more risk.</p></div>
-        <div class="card feat"><svg class="ico lg" aria-hidden="true"><use href="#i-pulse"/></svg><h3>Trading activity</h3><p>24h volume and buy/sell balance, plus additional Solana risk findings.</p></div>
+        <div class="card feat"><svg class="ico lg" aria-hidden="true"><use href="#i-alert"/></svg><h3>Honeypot and taxes</h3><p>Sell simulations and buy, sell and transfer tax on EVM chains and Tron.</p></div>
+        <div class="card feat"><svg class="ico lg" aria-hidden="true"><use href="#i-key"/></svg><h3>Mint and freeze</h3><p>Whether new supply can be created or balances frozen, including hidden mint paths and Solana Token-2022 controls.</p></div>
+        <div class="card feat"><svg class="ico lg" aria-hidden="true"><use href="#i-code"/></svg><h3>Owner permissions</h3><p>Balance edits, hidden owners, upgradeable proxies, hidden code, blacklists, pausing, limits and adjustable taxes.</p></div>
+        <div class="card feat"><svg class="ico lg" aria-hidden="true"><use href="#i-scan"/></svg><h3>Creator history</h3><p>Other tokens from the same creator, past rugs or scam links, and how much the creator still holds.</p></div>
+        <div class="card feat"><svg class="ico lg" aria-hidden="true"><use href="#i-users"/></svg><h3>Holders and linked wallets</h3><p>Top 10 share excluding pools, groups of linked wallets, and automated bundle-style launches.</p></div>
+        <div class="card feat"><svg class="ico lg" aria-hidden="true"><use href="#i-drop"/></svg><h3>Liquidity</h3><p>Pool depth, the main pool and its share, LP lock %, when the lock ends, and who controls the LP.</p></div>
+        <div class="card feat"><svg class="ico lg" aria-hidden="true"><use href="#i-clock"/></svg><h3>Age and activity</h3><p>How long the token has traded, 24h volume and buy/sell balance.</p></div>
+        <div class="card feat"><svg class="ico lg" aria-hidden="true"><use href="#i-layers"/></svg><h3>Data confidence</h3><p>Each report shows High, Medium or Low data confidence and lists anything that could not be checked.</p></div>
       </div>
     </section>
 
@@ -117,13 +117,17 @@
         <div class="grid3">
           <div class="card"><h3>Honeypot and taxes</h3><p>EVM and Tron: sell simulations. A honeypot or a sell tax above 50% = <b>High risk</b>. Sell tax above 10% = <b>+25</b>.</p></div>
           <div class="card"><h3>Mint permission</h3><p>An active Solana mint authority, or an EVM owner with minting rights = <b>+35</b>. Renounced permissions add nothing.</p></div>
-          <div class="card"><h3>Owner permissions</h3><p>Owner can modify balances = <b>+40</b>. Hidden owner, reclaimable ownership, unverified source code or a creator linked to previous honeypots = <b>+20–25</b> each. Blacklist, pause or adjustable tax with an active owner = <b>+15</b> each.</p></div>
-          <div class="card"><h3>Freeze authority</h3><p>Solana: an active freeze authority can prevent holders from transferring or selling. Active = <b>High risk</b>.</p></div>
-          <div class="card"><h3>Holder concentration</h3><p>Top 10 wallets, excluding pools and bonding curves: above 50% = <b>+30</b>, above 30% = <b>+15</b>. A single wallet above 15% = <b>+15</b>. Unlocked LP on smaller EVM pools = <b>+15</b>.</p></div>
+          <div class="card"><h3>Owner permissions</h3><p>Owner can modify balances = <b>+40</b> and <b>High risk</b>. Upgradeable proxy with hidden code = <b>High risk</b>. Hidden owner, reclaimable ownership or unverified source code = <b>+20–25</b> each; hidden mint = <b>+35</b>; upgradeable with an active owner = <b>+20</b>. Blacklist, pause or adjustable tax with an active owner = <b>+15</b> each; adjustable limits or external calls = <b>+10</b>.</p></div>
+          <div class="card"><h3>Freeze authority</h3><p>Solana: an active freeze authority can prevent holders from transferring or selling. Active = <b>High risk</b>. Token-2022 permanent delegate, default-frozen or non-transferable tokens = <b>High risk</b>; transfer hook = <b>+15</b>.</p></div>
+          <div class="card"><h3>Holder concentration</h3><p>Top 10 wallets, excluding pools and bonding curves: above 50% = <b>+30</b>, above 30% = <b>+15</b>. A single wallet above 15% = <b>+15</b>. </p></div>
           <div class="card"><h3>Liquidity</h3><p>Under $5k = <b>+30</b>, under $25k = <b>+15</b>. Tokens still on a pump.fun bonding curve are assessed by market cap: under $10k = <b>+20</b>, under $50k = <b>+10</b>.</p></div>
           <div class="card"><h3>Token age</h3><p>Under 24 hours = <b>+15</b>, under 7 days = <b>+8</b>.</p></div>
           <div class="card"><h3>Trading activity</h3><p>More than 70% of 24h trades are sells, or 24h volume under $1k = <b>+10</b> each.</p></div>
-          <div class="card"><h3>Solana risk reports</h3><p>Public Solana risk reports are included. Flagged as rugged = <b>High risk</b>. Each “danger” finding = <b>+15</b> (up to 3).</p></div>
+          <div class="card"><h3>Creator history</h3><p>Creator with past rugs or linked to scam or honeypot contracts = <b>High risk</b>. 10+ other launches = <b>+15</b> (3–9 = <b>+8</b>); most of them now nearly worthless = <b>+10</b>. Creator still holds over 20% = <b>+20</b> (over 5% = <b>+10</b>). Limit 40.</p></div>
+          <div class="card"><h3>Linked wallets</h3><p>Solana: linked wallets hold 30%+ = <b>High risk</b>, 10–30% = <b>+25</b>, 3–10% = <b>+12</b>; 3+ of the top 10 linked = <b>+15</b>; automated launch tool = <b>+10</b>. Tokens taken from holders = <b>High risk</b>. Limit 35.</p></div>
+          <div class="card"><h3>Liquidity lock</h3><p>Solana main pool under 50% locked = <b>+25</b> (50–89% = <b>+10</b>); EVM under 90% locked on pools under $500k = <b>+15</b>. Lock ends within 7 days = <b>+20</b> (30 days = <b>+10</b>). Creator controls half the LP = <b>+25</b>. Paired with an uncommon token = <b>+10</b>. Limit 30.</p></div>
+          <div class="card"><h3>Data confidence</h3><p>Six areas are checked and weighted. Gaps add few or no points (+5 if the lock is unknown on pools under $100k). A Low-confidence report is never shown as Low risk; it shows <b>Caution: not enough data</b>.</p></div>
+          <div class="card"><h3>Solana risk reports</h3><p>Public Solana risk reports are included. Flagged as rugged = <b>High risk</b>. Each other “danger” finding = <b>+15</b> (up to 3).</p></div>
           <div class="card"><h3>Other chains</h3><p>For TON, Hyperliquid, Aptos and other chains without a free contract scanner, the rating uses market data only (+10 for the missing contract check) and is labelled accordingly.</p></div>
           <div class="card"><h3>Chains</h3><p>Solana (including pump.fun), Ethereum, Base, BNB Chain, Arbitrum, Polygon, Optimism, Avalanche and other EVM chains, Tron, Sui, TON and more.</p></div>
         </div>
