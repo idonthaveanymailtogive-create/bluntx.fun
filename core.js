@@ -300,7 +300,7 @@
     if (d.rug) {
       var ka = d.rug.knownAccounts || {};
       Object.keys(ka).forEach(function (k) { if (/AMM|LOCKER/i.test(ka[k].type)) skip[k] = 1; });
-      (d.rug.markets || []).forEach(function (m) { if (m.pubkey) skip[m.pubkey] = 1; if (m.liquidityAAccount) skip[m.liquidityAAccount] = 1; if (m.liquidityBAccount) skip[m.liquidityBAccount] = 1; });
+      (d.rug.markets || []).forEach(function (m) { if (m.pubkey) skip[m.pubkey] = 1; if (typeof m.liquidityAAccount === 'string') skip[m.liquidityAAccount] = 1; if (typeof m.liquidityBAccount === 'string') skip[m.liquidityBAccount] = 1; });
       (d.rug.topHolders || []).forEach(function (h) { if (h.insider) { insider[h.address] = 1; if (h.owner) insider[h.owner] = 1; } });
     }
     var list = null, via = null;
@@ -761,7 +761,7 @@
   function joinList(a) { return a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1]; }
   function confidenceText(level, missing, partial) {
     var t = 'Data confidence: ' + level + '.';
-    if (missing.length) t += ' ' + cap1(joinList(missing)) + (missing.length === 1 ? ' could' : ' could') + ' not be checked.';
+    if (missing.length) t += ' ' + cap1(joinList(missing)) + ' could not be checked.';
     if (partial.length) t += ' Partly checked: ' + joinList(partial) + '.';
     return t;
   }
