@@ -46,35 +46,6 @@
     });
     return n;
   }
-  // Risk rail: SVG attributes only (no element.style), so it stays compatible with style-src 'self'.
-  function buildMeter(points, rating) {
-    var pts = Math.max(0, Number(points) || 0);
-    var visual = Math.min(100, pts);
-    var W = 284, X = 8, Y = 26, H = 6;
-    var nx = X + (visual / 100) * W;
-    var gW = (24.5 / 100) * W, yW = (30 / 100) * W, rW = W - gW - yW;
-    var clipId = 'meter-clip-' + Math.random().toString(36).slice(2, 9);
-    var svg = svgEl('svg', { class: 'meter', viewBox: '0 0 300 40', role: 'img', 'aria-label': pts + ' risk points, ' + rating });
-    svg.appendChild(svgEl('title', { text: pts + ' risk points, ' + rating }));
-    var defs = svgEl('defs');
-    var clip = svgEl('clipPath', { id: clipId });
-    clip.appendChild(svgEl('rect', { x: String(X), y: String(Y), width: String(W), height: String(H), rx: '3' }));
-    defs.appendChild(clip);
-    svg.appendChild(defs);
-    svg.appendChild(svgEl('rect', { class: 'meter-bed', x: String(X), y: String(Y), width: String(W), height: String(H), rx: '3' }));
-    var zones = svgEl('g', { 'clip-path': 'url(#' + clipId + ')' });
-    zones.appendChild(svgEl('rect', { class: 'meter-zone-g', x: String(X), y: String(Y), width: String(gW), height: String(H) }));
-    zones.appendChild(svgEl('rect', { class: 'meter-zone-y', x: String(X + gW), y: String(Y), width: String(yW), height: String(H) }));
-    zones.appendChild(svgEl('rect', { class: 'meter-zone-r', x: String(X + gW + yW), y: String(Y), width: String(rW), height: String(H) }));
-    svg.appendChild(zones);
-    var needle = svgEl('g', { transform: 'translate(' + nx.toFixed(1) + ',0)' });
-    needle.appendChild(svgEl('path', { class: 'meter-needle', d: 'M0 16 L4 26 L0 23.5 L-4 26 Z' }));
-    svg.appendChild(needle);
-    svg.appendChild(svgEl('text', { class: 'meter-lab', x: String(X), y: '12', text: 'Low' }));
-    svg.appendChild(svgEl('text', { class: 'meter-lab', x: String(X + gW), y: '12', text: 'Caution' }));
-    svg.appendChild(svgEl('text', { class: 'meter-lab', x: String(X + gW + yW), y: '12', text: 'High' }));
-    return el('div', { class: 'meter-wrap' }, [svg]);
-  }
   // Only http(s) links to known hosts; anything else is dropped.
   var LINK_HOSTS = /^(dexscreener\.com|rugcheck\.xyz|pump\.fun|gopluslabs\.io|honeypot\.is|solscan\.io|etherscan\.io|bscscan\.com|basescan\.org|arbiscan\.io|polygonscan\.com|optimistic\.etherscan\.io|snowtrace\.io|sonicscan\.org|blastscan\.io|lineascan\.build|tronscan\.org|suiscan\.xyz|tonviewer\.com|explorer\.aptoslabs\.com)$/;
   function safeUrl(u) {
@@ -90,76 +61,148 @@
   function msg(out, cls, text, spin) {
     out.replaceChildren(el('div', { class: cls }, [spin ? el('div', { class: 'spin' }) : null, text]));
   }
-  var ICON = { good: '✓', warn: '!', bad: '✕', info: 'i' };
-  function stat(k, v) { return el('div', { class: 'stat' }, [el('small', { text: k }), el('span', { text: String(v) })]); }
+  // ---------- report v3 (SVG attributes only, never element.style, so it stays within style-src 'self') ----------
+  var GA = { cx: 100, cy: 100, r: 80 };
+  function gPoint(v) { var a = Math.PI * Math.max(0, Math.min(100, v)) / 100; return [GA.cx - GA.r * Math.cos(a), GA.cy - GA.r * Math.sin(a)]; }
+  function gArc(v0, v1) {
+    var p0 = gPoint(v0), p1 = gPoint(v1);
+    return 'M' + p0[0].toFixed(2) + ' ' + p0[1].toFixed(2) + ' A80 80 0 0 1 ' + p1[0].toFixed(2) + ' ' + p1[1].toFixed(2);
+  }
+  function buildGauge(points, rating) {
+    var pts = Math.max(0, Number(points) || 0), v = Math.min(100, pts);
+    var label = pts + ' risk points: ' + rating + '. Under 25 is Low risk, 25 to 54 is Caution, 55 or more is High risk.';
+    var svg = svgEl('svg', { viewBox: '0 0 200 122', role: 'img', 'aria-label': label });
+    svg.appendChild(svgEl('title', { text: label }));
+    svg.appendChild(svgEl('path', { class: 'g-zone ok', d: gArc(0, 25) }));
+    svg.appendChild(svgEl('path', { class: 'g-zone warn', d: gArc(25, 55) }));
+    svg.appendChild(svgEl('path', { class: 'g-zone bad', d: gArc(55, 100) }));
+    if (v > 0.5) svg.appendChild(svgEl('path', { class: 'g-val', d: gArc(0, v) }));
+    var dot = gPoint(v);
+    svg.appendChild(svgEl('circle', { class: 'g-dot', cx: dot[0].toFixed(2), cy: dot[1].toFixed(2), r: '7' }));
+    [['0', 20, 118], ['25', 27, 36], ['55', 124, 11], ['100+', 180, 118]].forEach(function (t) {
+      svg.appendChild(svgEl('text', { class: 'g-tick', x: String(t[1]), y: String(t[2]), 'text-anchor': 'middle', text: t[0] }));
+    });
+    svg.appendChild(svgEl('text', { class: 'g-num', x: '100', y: '96', 'text-anchor': 'middle', text: String(pts) }));
+    svg.appendChild(svgEl('text', { class: 'g-of', x: '100', y: '116', 'text-anchor': 'middle', text: 'RISK POINTS' }));
+    return el('div', { class: 'rp-gauge' }, [svg]);
+  }
+  function bar(cls, frac) {
+    var f = Math.max(0, Math.min(1, frac || 0));
+    var svg = svgEl('svg', { viewBox: '0 0 100 6', preserveAspectRatio: 'none', 'aria-hidden': 'true' });
+    svg.appendChild(svgEl('rect', { x: '0', y: '0', width: '100', height: '6' }));
+    if (f > 0) svg.appendChild(svgEl('rect', { class: 'fill', x: '0', y: '0', width: (100 * f).toFixed(1), height: '6' }));
+    return el('span', { class: cls }, [svg]);
+  }
+  var LEVEL_WORD = { ok: 'Clear', warn: 'Caution', bad: 'High risk' };
+  var IC = { good: '✓', warn: '!', bad: '✕', info: 'i' };
+  function finding(r) {
+    var txt = el('span', null, [r.text, r.force ? el('span', { class: 'rp-crit', text: 'Critical' }) : null]);
+    var pts = r.pts || r.capped ? el('span', { class: 'rp-pts' + (r.level === 'bad' ? ' bad' : ''), title: r.capped ? 'Category limit reached' : '' },
+      ['+' + r.pts, r.capped ? el('small', { text: ' (limit)' }) : null]) : el('span');
+    return el('li', null, [el('span', { class: 'rp-ic ' + r.level, 'aria-hidden': 'true', text: IC[r.level] || 'i' }), txt, pts]);
+  }
+  function categoryCard(g) {
+    var scored = g.reasons.filter(function (r) { return r.pts || r.force || r.level === 'bad' || r.level === 'warn' || r.level === 'info'; });
+    var good = g.reasons.filter(function (r) { return scored.indexOf(r) < 0; });
+    var shown = scored.concat(good.slice(0, Math.max(0, 2 - scored.length)));
+    var more = good.filter(function (r) { return shown.indexOf(r) < 0; });
+    var sub = g.cap ? '+' + g.pts + ' of ' + g.cap + ' max' : (g.pts ? '+' + g.pts + ' points' : '0 points');
+    var kids = [
+      el('div', { class: 'rp-card-head' }, [el('h3', { text: g.title }), el('span', { class: 'rp-badge ' + g.level, text: LEVEL_WORD[g.level] })]),
+      el('div', { class: 'rp-card-sub' }, [el('span', { text: sub }), bar('rp-cap', g.cap ? g.pts / g.cap : g.pts / 55)]),
+      el('ul', { class: 'rp-f' }, shown.map(finding))
+    ];
+    if (more.length) kids.push(el('details', { class: 'rp-more' }, [el('summary', { text: more.length + ' more check' + (more.length === 1 ? '' : 's') + ' passed' }), el('ul', { class: 'rp-f' }, more.map(finding))]));
+    return el('article', { class: 'rp-card ' + g.level, 'aria-label': g.title + ': ' + LEVEL_WORD[g.level] }, kids);
+  }
+  function confBars(cf) {
+    return el('span', { class: 'rp-bars', 'aria-hidden': 'true' }, cf.areas.filter(function (a) { return a.state !== 'na'; }).map(function (a) {
+      return el('i', { class: a.state === 'checked' ? 'on' : a.state === 'partial' ? 'half' : '' });
+    }));
+  }
+  function stat(k, v) { return el('div', { class: 'rp-stat' }, [el('small', { text: k }), el('span', { text: String(v) })]); }
 
   function render(out, d, s) {
     if (s.verdict === 'error') { msg(out, 'err', s.message); return; }
     var t = C().title(s), m = s.market || {}, main = s.main;
-    var bt = main ? main.baseToken : d.gp ? { name: d.gp.token_name || d.gp.name, symbol: d.gp.token_symbol || d.gp.symbol }
+    var bt = main ? (String(main.baseToken && main.baseToken.address).toLowerCase() === d.addr.toLowerCase() ? main.baseToken : main.quoteToken || main.baseToken)
+      : d.gp ? { name: d.gp.token_name || d.gp.name, symbol: d.gp.token_symbol || d.gp.symbol }
       : (d.rug && d.rug.tokenMeta ? { name: d.rug.tokenMeta.name, symbol: d.rug.tokenMeta.symbol } : {});
+    bt = bt || {};
     var img = safeImg(main && main.info && main.info.imageUrl);
     var frag = document.createDocumentFragment();
 
-    frag.appendChild(el('div', { class: 'verdict ' + s.verdict }, [
-      el('div', { class: 'score' }, [el('b', { text: String(s.points) }), el('small', { text: 'risk pts' })]),
-      el('div', null, [
-        el('h3', null, [t[0], s.limited ? el('small', { class: 'lim', text: 'market data only' }) : null]),
-        el('p', { text: t[1] })
-      ])
-    ]));
-    frag.appendChild(buildMeter(s.points, t[0]));
-
-    var cf = s.confidence;
-    if (cf) {
-      var cfKids = [el('div', { class: 'conf-head' }, [el('b', { text: 'Data confidence: ' + cf.level }), el('span', { class: 'mut', text: ' ' + cf.pct + '% of checks completed' })])];
-      if (cf.missing.length) cfKids.push(el('p', { text: 'Could not be checked: ' + cf.missing.join(', ') + '.' }));
-      if (cf.partial.length) cfKids.push(el('p', { text: 'Partly checked: ' + cf.partial.join(', ') + '.' }));
-      if (!cf.missing.length && !cf.partial.length) cfKids.push(el('p', { text: 'All checks completed.' }));
-      if (cf.retry) {
-        var rb = el('button', { type: 'button', class: 'retry', text: 'Try again' });
-        rb.addEventListener('click', function () { C().resetNet(); var sel = document.getElementById('chain'); check(d.addr, sel ? sel.value : 'auto'); });
-        cfKids.push(rb);
-      }
-      frag.appendChild(el('div', { class: 'conf conf-' + cf.level.toLowerCase() }, cfKids));
-    }
-    var pl = s.pool;
-    if (pl) {
-      var plText = pl.kind === 'curve' ? 'Bonding curve (no DEX pool yet)'
-        : pl.dex + ' · ' + usd(pl.liq) + ' · ' + Math.round(pl.share * 100) + '% of liquidity · ' +
-          (pl.kind === 'lp' ? pct(pl.lockPct) + ' locked or burned' : 'lock not verifiable');
-      frag.appendChild(el('div', { class: 'pool' }, [el('small', { text: 'Main pool' }), el('span', { text: plText })]));
-    }
-
+    // token header
     var others = (d.chainsSeen || []).filter(function (c) { return c !== d.chain; });
-    var tokKids = [];
-    if (img) { var im = el('img', { alt: '', width: '36', height: '36', referrerpolicy: 'no-referrer', loading: 'lazy' }); im.src = img; tokKids.push(im); }
-    tokKids.push(el('div', null, [
-      el('b', { text: (bt.name || 'Unknown token').trim() + (bt.symbol ? ' ($' + String(bt.symbol).trim() + ')' : '') }), ' ',
-      el('span', { class: 'chip', text: chainName(d.chain) }), el('br'),
+    var sym = bt.symbol ? String(bt.symbol).trim() : '';
+    var media;
+    if (img) { media = el('img', { alt: '', width: '42', height: '42', referrerpolicy: 'no-referrer', loading: 'lazy' }); media.src = img; }
+    else media = el('span', { class: 'rp-ph', 'aria-hidden': 'true', text: (sym || '?').slice(0, 2).toUpperCase() });
+    frag.appendChild(el('div', { class: 'rp-tok' }, [media, el('div', null, [
+      el('p', { class: 'rp-eyebrow', text: 'Token risk report' }),
+      el('h3', { class: 'rp-name' }, [(bt.name || 'Unknown token').trim(), sym ? el('span', { class: 'mut', text: ' ($' + sym + ')' }) : null]),
+      el('span', { class: 'chip', text: chainName(d.chain) }), main ? el('span', { class: 'chip', text: s.pool ? s.pool.dex : main.dexId }) : null,
+      s.limited ? el('span', { class: 'chip', text: 'Market data only' }) : null,
       el('code', { text: d.addr }),
       others.length ? el('small', { class: 'mut also', text: 'Also trades on: ' + others.map(chainName).join(', ') + ' (select a chain above to check it there)' }) : null
-    ]));
-    frag.appendChild(el('div', { class: 'tok' }, tokKids));
+    ])]));
 
+    // summary: gauge, verdict, main reasons, confidence
+    var cf = s.confidence;
+    var range = s.verdict === 'green' ? ['ok', 'Under 25'] : s.verdict === 'yellow' ? ['warn', '25–54'] : ['bad', s.forced && s.points < 55 ? 'Critical finding' : '55 or more'];
+    var why = (s.top && s.top.length ? s.top : []).map(function (r, i) {
+      return el('li', null, [el('span', { class: 'rp-n ' + (r.level === 'bad' ? 'bad' : 'warn'), text: String(i + 1) }), el('span', { text: r.text })]);
+    });
+    if (!why.length) why = [el('li', null, [el('span', { class: 'rp-n ok', text: '✓' }), el('span', { text: 'No risk signals added points to this report.' })])];
+    var confKids = cf ? [confBars(cf), el('span', null, [el('b', { text: 'Data confidence: ' + cf.level }), ' · ' + cf.pct + '% of checks completed'])] : [];
+    frag.appendChild(el('section', { class: 'rp-sum ' + s.verdict, 'aria-label': 'Overall rating' }, [
+      buildGauge(s.points, t[0]),
+      el('div', null, [
+        el('p', { class: 'rp-verdict' }, [t[0], el('span', { class: 'rp-badge ' + range[0], text: range[1] })]),
+        el('p', { class: 'rp-lede', text: t[1] }),
+        el('ol', { class: 'rp-why', 'aria-label': 'Main reasons' }, why),
+        el('div', { class: 'rp-confline' }, confKids)
+      ])
+    ]));
+
+    // key numbers
     var safety;
-    if (d.engine === 'solana') safety = stat('Mint / Freeze', d.authoritiesKnown ? (d.mintAuthority ? 'ACTIVE' : 'revoked') + ' / ' + (d.freezeAuthority ? 'ACTIVE' : 'revoked') : '—');
-    else if (d.engine === 'goplus' && d.gp) safety = stat('Honeypot · Buy/Sell tax', (d.honeypot ? 'YES' : 'No') + ' · ' + (d.taxes && d.taxes.buy != null ? pct(d.taxes.buy) + '/' + pct(d.taxes.sell) : '—'));
-    else if (d.engine === 'goplus-sui' && d.gp) safety = stat('Mintable', d.gp.mintable && flag(d.gp.mintable.value) ? 'YES' : 'No');
-    else safety = stat('Contract scan', 'not available');
-    frag.appendChild(el('div', { class: 'stats' }, [
+    if (d.engine === 'solana') safety = stat('Mint / Freeze', d.authoritiesKnown ? (d.mintAuthority ? 'Active' : 'Revoked') + ' / ' + (d.freezeAuthority ? 'Active' : 'Revoked') : '—');
+    else if (d.taxes && d.taxes.buy != null) safety = stat('Buy / sell tax', pct(d.taxes.buy) + ' / ' + pct(d.taxes.sell));
+    else safety = stat('Market cap', usd(m.mcap));
+    frag.appendChild(el('div', { class: 'rp-stats', 'aria-label': 'Key numbers' }, [
       stat('Price', m.price ? '$' + Number(m.price).toPrecision(4) : '—'),
       stat(m.onCurve ? 'Market cap' : 'Liquidity', m.onCurve ? usd(m.mcap) : usd(m.liq)),
-      stat('FDV', usd(m.fdv)), stat('24h volume', usd(m.vol24)),
-      stat('24h buys / sells', main ? m.buys + ' / ' + m.sells : '—'),
+      stat('24h volume', usd(m.vol24)),
       stat('Age', isFinite(m.created) ? ago((Date.now() - m.created) / 36e5) : '—'),
-      stat('Top 10 holders', s.holders ? s.holders.top10.toFixed(1) + '%' : '—'), safety
+      stat('Top 10 holders', s.holders ? s.holders.top10.toFixed(1) + '%' : '—'),
+      safety
     ]));
 
-    frag.appendChild(el('ul', { class: 'reasons' }, s.reasons.map(function (r) {
-      return el('li', { class: r.level }, [el('span', { class: 'ic', 'aria-hidden': 'true', text: ICON[r.level] }), el('span', { text: r.text }),
-        (r.pts || r.capped) ? el('span', { class: 'pts', title: r.capped ? 'Category limit reached' : '', text: '+' + r.pts + (r.capped ? ' (limit)' : '') }) : null]);
-    })));
+    // category cards, most points first
+    var order = { bad: 0, warn: 1, ok: 2 };
+    var groups = (s.groups || []).slice().sort(function (a, b) { return (order[a.level] - order[b.level]) || (b.pts - a.pts); });
+    frag.appendChild(el('h3', { class: 'rp-h', text: 'Findings by category' }));
+    frag.appendChild(el('div', { class: 'rp-cards' }, groups.map(categoryCard)));
+
+    // data confidence
+    if (cf) {
+      var head = el('p', null, [el('b', { text: cf.level + ' · ' + cf.pct + '%. ' }),
+        cf.fresh ? 'Very new token: some checks may not have caught up yet. ' : '',
+        !cf.missing.length && !cf.partial.length ? 'All checks completed.' : (cf.missing.length ? 'Not available: ' + cf.missing.join(', ') + '. ' : '') + (cf.partial.length ? 'Partly checked: ' + cf.partial.join(', ') + '.' : '')]);
+      var areas = el('div', { class: 'rp-areas' }, cf.areas.map(function (a) {
+        return el('div', { class: 'rp-area ' + a.state }, [el('span', { text: a.label }), el('span', { class: 'st ' + a.state, text: a.stateText }),
+          bar('bar', a.state === 'checked' ? 1 : a.state === 'partial' ? 0.5 : 0), a.why ? el('span', { class: 'why', text: cap(a.why) + '.' }) : null]);
+      }));
+      var ck = [head, areas, el('div', { class: 'rp-legend' }, [el('span', null, [el('i', { class: 'l-ok' }), 'Low risk: under 25']), el('span', null, [el('i', { class: 'l-warn' }), 'Caution: 25–54']), el('span', null, [el('i', { class: 'l-bad' }), 'High risk: 55 or more, or any critical finding'])])];
+      if (cf.retry) {
+        var rb = el('button', { type: 'button', class: 'btn-secondary rp-retry', text: 'Try again' });
+        rb.addEventListener('click', function () { C().resetNet(); var sel = document.getElementById('chain'); check(d.addr, sel ? sel.value : 'auto'); });
+        ck.push(rb);
+      }
+      frag.appendChild(el('h3', { class: 'rp-h', text: 'Data confidence' }));
+      frag.appendChild(el('section', { class: 'rp-conf', 'aria-label': 'Data confidence' }, ck));
+    }
 
     var a = encodeURIComponent(d.addr), ex = CHAINS[d.chain] && CHAINS[d.chain][1];
     var links = [main ? ext(main.url, 'DexScreener') : null];
@@ -169,13 +212,14 @@
     if (ex) links.push(ext(ex + a, 'Explorer'));
     frag.appendChild(el('div', { class: 'links' }, links));
 
-    var NAMES = { dexscreener: 'DexScreener', goplus: 'GoPlus', honeypot: 'honeypot.is', rugcheck: 'RugCheck', rpcAccount: 'Solana RPC', rpcSupply: 'Solana RPC (supply)', rpcHolders: 'Solana RPC (holder lookup)', goplusCreator: 'GoPlus (creator wallet)', evmRpc: 'public RPC' };
-    var used = Object.keys(d.sources).map(function (k) { return { dexscreener: 'DexScreener', goplus: 'GoPlus', honeypot: 'honeypot.is', rugcheck: d.rugSummary ? 'RugCheck (summary)' : 'RugCheck', rpcAccount: 'Solana RPC', evmRpc: 'public RPC' }[k]; }).filter(function (v, i, a) { return v && a.indexOf(v) === i; });
+    var NAMES = { dexscreener: 'DexScreener', goplus: 'GoPlus', honeypot: 'honeypot.is', rugcheck: 'RugCheck', rpcAccount: 'Solana RPC', rpcSupply: 'Solana RPC (supply)', rpcHolders: 'Solana RPC (holder lookup)', goplusCreator: 'GoPlus (creator wallet)', evmRpc: 'public RPC', rugGraph: 'RugCheck (wallet graph)', dexSearch: 'DexScreener (name search)' };
+    var used = Object.keys(d.sources).map(function (k) { return { dexscreener: 'DexScreener', goplus: 'GoPlus', honeypot: 'honeypot.is', rugcheck: d.rugSummary ? 'RugCheck (summary)' : 'RugCheck', rpcAccount: 'Solana RPC', evmRpc: 'public RPC' }[k]; }).filter(function (v, i, arr) { return v && arr.indexOf(v) === i; });
     var errs = Object.keys(d.errors).map(function (k) { return NAMES[k] || k; });
     frag.appendChild(el('p', { class: 'src', text: 'Chain: ' + chainName(d.chain) + (d.chainGuessed ? ' (guessed from address format)' : '') + '. Data: ' + used.join(', ') +
       (s.holders ? '. Holders via ' + s.holders.via : '') + '. ' + (errs.length ? 'Unavailable: ' + errs.join(', ') + '. ' : '') + 'Checked ' + new Date().toLocaleString() + '.' }));
     out.replaceChildren(frag);
   }
+  function cap(x) { return x.charAt(0).toUpperCase() + x.slice(1); }
 
   var MAX_INPUT = 300;
   async function check(raw, chainChoice) {

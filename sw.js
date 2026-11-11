@@ -1,9 +1,9 @@
 // BluntX service worker: caches the site's own files for offline/app use.
 // It never touches third-party API requests, so token checks always go live to the data sources and nothing is stored.
-const CACHE = "bluntx-v7";
+const CACHE = "bluntx-v8";
 const ASSETS = ["/", "/index.html", "/how.html", "/extension.html", "/faq.html", "/whitepaper.html",
   "/style.css", "/whitepaper.css", "/app.js", "/core.js", "/logo.svg", "/favicon.svg", "/favicon.png",
-  "/apple-touch-icon.png", "/manifest.webmanifest", "/framebuster.js", "/icon-192.png", "/icon-512.png", "/icon-512-maskable.png"];
+  "/apple-touch-icon.png", "/manifest.webmanifest", "/framebuster.js", "/icon-192.png", "/icon-512.png", "/icon-512-maskable.png", "/fonts/Fraunces.woff2", "/fonts/Inter.woff2"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
