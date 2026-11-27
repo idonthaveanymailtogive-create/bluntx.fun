@@ -286,6 +286,38 @@
   var CHAIN_OPTS = [];
 
 
+  function initSample() {
+    var btn = document.getElementById('sample-toggle');
+    var dialog = document.getElementById('sample');
+    var closeBtn = document.getElementById('sample-close');
+    if (!btn || !dialog || !closeBtn || typeof dialog.showModal !== 'function') return;
+    function setOpen(next) {
+      if (next && !dialog.open) {
+        dialog.showModal();
+      } else if (!next && dialog.open) {
+        dialog.close();
+      }
+    }
+    dialog.addEventListener('close', function () {
+      btn.setAttribute('aria-expanded', 'false');
+      document.documentElement.classList.remove('sample-open');
+      if (typeof btn.focus === 'function') btn.focus();
+    });
+    dialog.addEventListener('click', function (e) {
+      if (e.target === dialog) setOpen(false);
+    });
+    closeBtn.addEventListener('click', function () { setOpen(false); });
+    btn.addEventListener('click', function () {
+      var next = !dialog.open;
+      setOpen(next);
+      if (next) {
+        btn.setAttribute('aria-expanded', 'true');
+        document.documentElement.classList.add('sample-open');
+        closeBtn.focus();
+      }
+    });
+  }
+
   function initDrawer() {
     var btn = document.getElementById('menu-btn');
     var drawer = document.getElementById('drawer');
@@ -389,6 +421,7 @@
     document.addEventListener('DOMContentLoaded', function () {
       var yr = document.getElementById('yr'); if (yr) yr.textContent = String(new Date().getFullYear());
       initDrawer();
+      initSample();
       if (redirectLegacyHash()) return;
       var input = document.getElementById('mint'), sel = document.getElementById('chain');
       if (!input || !sel) return;
