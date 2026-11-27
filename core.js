@@ -776,17 +776,35 @@
     var pts = reasons.reduce(function (s, r) { return s + (r.pts || 0); }, 0);
     var forceRed = reasons.some(function (r) { return r.force; });
     var verdict = forceRed || pts >= HIGH_MIN ? 'red' : pts >= LOW_MAX ? 'yellow' : 'green';
-    if (verdict === 'red') reasons.forEach(function (r) {   // a green tick must not read as safety on a High-risk token
-      if (r.jup) { r.level = 'info'; r.text += ' Being listed only means the token is known to Jupiter; it does not make it safe.'; }
-      if (r.dustLock) r.level = 'info';
-    });
     var conf = confidence(d, { pairs: pairs, holders: h, pool: pool, limited: limited, fullRug: fullRug, fresh: fresh });
     var lowData = false;
     if (verdict === 'green' && conf.level === 'Low') { verdict = 'yellow'; lowData = true; }
+    // Points are already final. High and Caution must not carry a "good" finding: the report draws a green tick for that level.
+    if (verdict !== 'green') reasons.forEach(function (r) {
+      if (r.level !== 'good') return;
+      r.level = 'note';
+      if (verdict === 'red') r.text = calmFinding(r);
+    });
     var top = reasons.filter(function (r) { return r.pts > 0 || r.force; })
       .sort(function (a, b) { return (b.force ? 1000 : 0) + b.pts - ((a.force ? 1000 : 0) + a.pts); }).slice(0, 3);
+    var groups = groupSummary(reasons);
+    if (verdict !== 'green') groups.forEach(function (g) { if (g.level === 'ok') g.level = 'note'; });
     return { verdict: verdict, points: pts, reasons: reasons, market: m, main: main, holders: h, limited: limited,
-      pool: pool, confidence: conf, lowData: lowData, forced: forceRed, top: top, groups: groupSummary(reasons), fresh: fresh };
+      pool: pool, confidence: conf, lowData: lowData, forced: forceRed, top: top, groups: groups, fresh: fresh };
+  }
+
+  // A positive line on a High report stays visible, but it must not read as a pass.
+  function calmFinding(r) {
+    var t = r.text || '';
+    if (/does not make (it|this token) safe/i.test(t)) return t;
+    if (r.jup) return t + ' Being listed only means the token is known to Jupiter; it does not make it safe.';
+    t = t.replace(/^No honeypot detected:\s*/i, 'A sell simulation completed. ');
+    t = t.replace(/^Low taxes:\s*/i, 'Recorded taxes: ');
+    t = t.replace(/:\s*broadly distributed\.$/, '.');
+    t = t.replace(/^Adequate liquidity \(([^)]+)\)\.?/, 'Liquidity is $1.');
+    t = t.replace(/\s+$/, '');
+    if (!/[.!?]$/.test(t)) t += '.';
+    return t + ' This does not make the token safe.';
   }
 
   // Migrated-pool liquidity. Under $500 is a forced High once the token is at least an hour old

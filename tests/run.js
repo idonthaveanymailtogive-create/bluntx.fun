@@ -39,7 +39,21 @@ tokens.forEach(function (t) {
   if (!fx.data || fx.data.coreVersion !== '4.0.0') { check(t.name, false, 'fixture was not gathered by core 4.0.0'); return; }
   const s = core.score(fx.data, fx.gatheredAt);
   const got = bandOf(s);
+  const POINTS = { bonk: 5, jup: 10, wif: 10, usdc: 5, ray: 10, fartcoin: 5, pepe: 5, brett: 5, anusha: 28, rizzmass3: 138, bip: 58, hawk: 95, squid: 145, notsafemoon: 78 };
   check(t.name + ' ' + got + ' ' + s.points + (s.forced ? ' forced' : ''), okBand(t.band, got), 'expected ' + t.band);
+  check(t.name + ' score unchanged', s.points === POINTS[t.id], 'got ' + s.points);
+  var allFindings = (s.reasons || []).concat((s.groups || []).reduce(function (a, g) { return a.concat(g.reasons || []); }, []));
+  if (s.verdict === 'red' || s.verdict === 'yellow') {
+    var goods = allFindings.filter(function (r) { return r.level === 'good'; });
+    check(t.name + ' has no green findings', !goods.length, goods.map(function (r) { return r.level + ': ' + r.text; }).slice(0, 2).join(' | '));
+  }
+  if (s.verdict === 'red') {
+    var bare = (s.reasons || []).filter(function (r) {
+      return (/^No honeypot detected\b|^Low taxes:/.test(r.text) || /of LP (tokens )?(are )?locked or burned\.?$/.test(r.text)) && !/does not make (it|the token) safe/i.test(r.text);
+    });
+    check(t.name + ' positive lines do not read as safety', !bare.length, bare.map(function (r) { return r.text; }).join(' | '));
+  }
+  if (s.verdict === 'green' && t.id !== 'usdc') check(t.name + ' keeps a green finding on Low', (s.reasons || []).some(function (r) { return r.level === 'good'; }));
   const text = (s.reasons || []).map(function (r) { return r.text; }).join('\n');
   if (t.id === 'hawk' || t.id === 'squid') check(t.name + ' names the incident', /Known incident:/.test(text));
   if (t.id === 'usdc') check('USDC is not a forced High', s.verdict === 'green' && !s.forced);

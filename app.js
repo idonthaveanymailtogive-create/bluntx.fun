@@ -93,27 +93,38 @@
     if (f > 0) svg.appendChild(svgEl('rect', { class: 'fill', x: '0', y: '0', width: (100 * f).toFixed(1), height: '6' }));
     return el('span', { class: cls }, [svg]);
   }
-  var LEVEL_WORD = { ok: 'Clear', warn: 'Caution', bad: 'High risk' };
-  var IC = { good: '✓', warn: '!', bad: '✕', info: 'i' };
-  function finding(r) {
+  var LEVEL_WORD = { ok: 'Clear', note: 'Noted', warn: 'Caution', bad: 'High risk' };
+  var IC = { good: '✓', warn: '!', bad: '✕', info: 'i', note: '•' };
+  // Only a Low report uses a green tick. High and Caution show the same line as a neutral note.
+  function shownLevel(r, verdict) { return verdict !== 'green' && (r.level === 'good' || r.level === 'ok') ? 'note' : r.level; }
+  function finding(r, verdict) {
+    var level = shownLevel(r, verdict);
     var txt = el('span', null, [r.text, r.force ? el('span', { class: 'rp-crit', text: 'Critical' }) : null]);
-    var pts = r.pts || r.capped ? el('span', { class: 'rp-pts' + (r.level === 'bad' ? ' bad' : ''), title: r.capped ? 'Category limit reached' : '' },
+    var pts = r.pts || r.capped ? el('span', { class: 'rp-pts' + (level === 'bad' ? ' bad' : ''), title: r.capped ? 'Category limit reached' : '' },
       ['+' + r.pts, r.capped ? el('small', { text: ' (limit)' }) : null]) : el('span');
-    return el('li', null, [el('span', { class: 'rp-ic ' + r.level, 'aria-hidden': 'true', text: IC[r.level] || 'i' }), txt, pts]);
+    return el('li', null, [el('span', { class: 'rp-ic ' + level, 'aria-hidden': 'true', text: IC[level] || '•' }), txt, pts]);
   }
-  function categoryCard(g) {
-    var scored = g.reasons.filter(function (r) { return r.pts || r.force || r.level === 'bad' || r.level === 'warn' || r.level === 'info'; });
+  function categoryCard(g, verdict) {
+    var quiet = verdict !== 'green';
+    var cardLevel = quiet && g.level === 'ok' ? 'note' : g.level;
+    var word = LEVEL_WORD[cardLevel] || cardLevel;
+    var scored = g.reasons.filter(function (r) { return r.pts || r.force || r.level === 'bad' || r.level === 'warn' || r.level === 'info' || r.level === 'note'; });
     var good = g.reasons.filter(function (r) { return scored.indexOf(r) < 0; });
     var shown = scored.concat(good.slice(0, Math.max(0, 2 - scored.length)));
     var more = good.filter(function (r) { return shown.indexOf(r) < 0; });
     var sub = g.cap ? '+' + g.pts + ' of ' + g.cap + ' max' : (g.pts ? '+' + g.pts + ' points' : '0 points');
     var kids = [
-      el('div', { class: 'rp-card-head' }, [el('h3', { text: g.title }), el('span', { class: 'rp-badge ' + g.level, text: LEVEL_WORD[g.level] })]),
+      el('div', { class: 'rp-card-head' }, [el('h3', { text: g.title }), el('span', { class: 'rp-badge ' + cardLevel, text: word })]),
       el('div', { class: 'rp-card-sub' }, [el('span', { text: sub }), bar('rp-cap', g.cap ? g.pts / g.cap : g.pts / 55)]),
-      el('ul', { class: 'rp-f' }, shown.map(finding))
+      el('ul', { class: 'rp-f' }, shown.map(function (r) { return finding(r, verdict); }))
     ];
-    if (more.length) kids.push(el('details', { class: 'rp-more' }, [el('summary', { text: more.length + ' more check' + (more.length === 1 ? '' : 's') + ' passed' }), el('ul', { class: 'rp-f' }, more.map(finding))]));
-    return el('article', { class: 'rp-card ' + g.level, 'aria-label': g.title + ': ' + LEVEL_WORD[g.level] }, kids);
+    if (more.length) {
+      var summary = quiet
+        ? more.length + ' more note' + (more.length === 1 ? '' : 's')
+        : more.length + ' more check' + (more.length === 1 ? '' : 's') + ' passed';
+      kids.push(el('details', { class: quiet ? 'rp-more' : 'rp-more pass' }, [el('summary', { text: summary }), el('ul', { class: 'rp-f' }, more.map(function (r) { return finding(r, verdict); }))]));
+    }
+    return el('article', { class: 'rp-card ' + cardLevel, 'aria-label': g.title + ': ' + word }, kids);
   }
   function confBars(cf) {
     return el('span', { class: 'rp-bars', 'aria-hidden': 'true' }, cf.areas.filter(function (a) { return a.state !== 'na'; }).map(function (a) {
@@ -153,7 +164,7 @@
     var why = (s.top && s.top.length ? s.top : []).map(function (r, i) {
       return el('li', null, [el('span', { class: 'rp-n ' + (r.level === 'bad' ? 'bad' : 'warn'), text: String(i + 1) }), el('span', { text: r.text })]);
     });
-    if (!why.length) why = [el('li', null, [el('span', { class: 'rp-n ok', text: '✓' }), el('span', { text: 'No risk signals added points to this report.' })])];
+    if (!why.length) why = [el('li', null, [el('span', { class: 'rp-n ' + (s.verdict === 'green' ? 'ok' : 'note'), text: s.verdict === 'green' ? '✓' : '•' }), el('span', { text: s.verdict === 'green' ? 'No risk signals added points to this report.' : 'No extra risk points. That does not make the token safe.' })])];
     var confKids = cf ? [confBars(cf), el('span', null, [el('b', { text: 'Data confidence: ' + cf.level }), ' · ' + cf.pct + '% of checks completed'])] : [];
     frag.appendChild(el('section', { class: 'rp-sum ' + s.verdict, 'aria-label': 'Overall rating' }, [
       buildGauge(s.points, t[0]),
@@ -180,10 +191,10 @@
     ]));
 
     // category cards, most points first
-    var order = { bad: 0, warn: 1, ok: 2 };
+    var order = { bad: 0, warn: 1, note: 2, ok: 3 };
     var groups = (s.groups || []).slice().sort(function (a, b) { return (order[a.level] - order[b.level]) || (b.pts - a.pts); });
     frag.appendChild(el('h3', { class: 'rp-h', text: 'Findings by category' }));
-    frag.appendChild(el('div', { class: 'rp-cards' }, groups.map(categoryCard)));
+    frag.appendChild(el('div', { class: 'rp-cards' }, groups.map(function (g) { return categoryCard(g, s.verdict); })));
 
     // data confidence
     if (cf) {
