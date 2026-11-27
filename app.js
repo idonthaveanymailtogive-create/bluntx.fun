@@ -249,7 +249,7 @@
     btn.disabled = true;
     out.closest('.result').hidden = false;
     msg(out, 'loading', 'Analyzing token… detecting the chain and retrieving public data.', true);
-    out.closest('.result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    revealReport();
     try {
       var d = await gather(addr, chainChoice);
       render(out, d, score(d));
@@ -257,6 +257,22 @@
     } catch (e) {
       msg(out, 'err', 'Data sources are currently unreachable. Please check your connection and try again.');
     } finally { btn.disabled = false; }
+  }
+
+  // Keep the address field on screen and show the top of the report directly under the form.
+  // Scroll the field, not the report: the report is long, and scrolling it lands at the bottom of the page.
+  function revealReport() {
+    var input = document.getElementById('mint');
+    var box = document.getElementById('result');
+    if (!input || !box) return;
+    var nav = document.querySelector('.nav');
+    var navH = nav ? nav.getBoundingClientRect().height : 0;
+    var inputTop = input.getBoundingClientRect().top;
+    var reportTop = box.getBoundingClientRect().top;
+    var visible = window.innerHeight - reportTop;
+    if (inputTop >= navH - 2 && visible >= 220) return;
+    var y = window.scrollY + inputTop - navH - 12;
+    window.scrollTo({ top: Math.max(0, y), left: 0, behavior: 'auto' });
   }
 
   function fromHash() {

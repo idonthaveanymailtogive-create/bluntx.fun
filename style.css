@@ -75,6 +75,9 @@ img{max-width:100%}
 /* hero */
 .hero{padding:64px 0 48px}
 .hero-grid{display:grid;grid-template-columns:1fr;gap:48px;align-items:center}
+.hero-copy{min-width:0}
+.hero-copy .result{margin-top:16px}
+.hero-grid:has(#result:not([hidden])){align-items:start}
 .eyebrow{display:inline-flex;align-items:center;gap:8px;margin:0 0 22px;padding:5px 12px;border:1px solid var(--line2);border-radius:999px;background:rgba(15,20,18,.6);color:var(--acc);font-size:12.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
 .dot{width:7px;height:7px;border-radius:50%;background:var(--acc2);box-shadow:0 0 10px var(--acc2)}
 h1{font-family:var(--serif);font-size:clamp(40px,6vw,64px);line-height:1.05;letter-spacing:-.02em;margin:0 0 20px;font-weight:600}
@@ -259,6 +262,7 @@ code{font:13px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--bg2)
 @media(min-width:900px){
   .hero{padding:96px 0 72px}
   .hero-grid{grid-template-columns:1.08fr .92fr;gap:72px}
+  .hero-copy .rp-cards{grid-template-columns:1fr}
   .section{padding:104px 24px}
   .grid4{grid-template-columns:repeat(4,1fr)}.grid3{grid-template-columns:repeat(3,1fr)}
   .ext-card{grid-template-columns:1.1fr 1fr;padding:40px}
