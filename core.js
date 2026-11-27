@@ -1,10 +1,10 @@
-/* BluntX checker core v3: data gathering + scoring, shared byte-for-byte by bluntx.fun and the BluntX extension.
+/* BluntX checker core v4: data gathering + scoring, shared byte-for-byte by bluntx.fun and the BluntX extension.
    No DOM access. Every call goes straight to free, keyless public APIs:
    DexScreener (all chains), Solana RPC + RugCheck (Solana), GoPlus (EVM, Tron, Sui), honeypot.is (ETH/BSC/Base),
    public EVM RPC (proxy-slot fallback). Points: under 25 = Low risk, 25–54 = Caution, 55+ = High risk. */
 (function (root) {
   'use strict';
-  var VERSION = '3.0.0';
+  var VERSION = '4.0.0';
 
   // ---------- config ----------
   var RPCS = [
@@ -58,6 +58,24 @@
   var MAJORS = /^(W?SOL|USDC(\.e)?|USDT|USDbC|USD1|USDe|USDS|DAI|PYUSD|FDUSD|USDG|W?ETH|stETH|wstETH|cbETH|W?BNB|BTCB|W?BTC|cbBTC|W?AVAX|W?POL|MATIC|WMATIC|W?S|W?TRX|SUI|TON|W?HYPE|W?BERA|W?MON|W?CRO|W?MNT)$/i;
   var AUTO_LAUNCHERS = /uxento|j7tracker|rapidlaunch/i;
   var NATIVE_RC = /creator history|lp unlocked|unlocked lp|insider|permanent delegate|transfer hook|default account state|non.?transferable|transfer fee/i;
+  // RugCheck dangers that repeat a holder or liquidity check BluntX already scores. Shown as notes, not scored again.
+  var DUP_RC = /top 10 holders|single holder|low liquidity/i;
+  // Famous collapses whose damage today's prices no longer show. Keyed by chain:lowercase address.
+  // Only entries backed by widely reported public incidents. Wording is factual and pending owner approval.
+  var KNOWN_INCIDENTS = {
+    'bsc:0x87230146e138d3f296a9a77e497a2a83012e9bc5': 'This is the Squid Game (SQUID) token on BNB Chain. In November 2021, holders were blocked from selling and the developers sold their tokens.',
+    'solana:hawkthxrcnl9zgzkqguxlm4w8tnrz7u6mvdeepsutj34': 'This is the Hawk Tuah (HAWK) token on Solana. After its December 2024 launch, the price collapsed within hours as early holders sold.'
+  };
+  // Canonical Solana stablecoin mints whose issuer keeps mint and freeze authority by design.
+  var ISSUER_STABLES = {
+    'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': 'USDC (issued by Circle)',
+    'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB': 'USDT (issued by Tether)'
+  };
+  // Established: at least a year of trading, deep liquidity, and an outside listing. Holder points on these are capped.
+  var EST_AGE_H = 365 * 24, EST_LIQ = 5e5, EST_HOLDER_CAP = 10;
+  var DEAD_LIQ = 500;   // a migrated pool below this cannot absorb a meaningful sale
+  // With no DexScreener pairs, an EVM address is scanned on these chains instead of assuming Ethereum.
+  var EVM_PROBE_CHAINS = ['ethereum', 'bsc', 'base'];
   var MAJOR_QUOTE = /^(W?SOL|USDC(\.e)?|USDT|USDbC|USD1|DAI|PYUSD|FDUSD|W?ETH|W?BNB|W?AVAX|W?POL|WMATIC|W?S|W?TRX|SUI|TON|W?HYPE|W?BERA|W?CRO|W?MNT)$/i;
   var NET_MIN = 2, NET_MAX = 50;          // F1: only small linked-wallet networks are scored
   var LP_LOCKER = /raydium|flux|meteora|lp/i; // F4: these Solana locker types hold LP; others (Jupiter, Streamflow…) are token vesting
@@ -158,6 +176,11 @@
         if (Array.isArray(tp) && tp.length) { d.allPairs = tp; d.sources.dexscreener = 'ok (' + tp.length + ' pairs, per-chain)'; }
       } catch (e) { /* keep the first result */ }
     }
+    // Same fallback for auto-detect, across the chains a 0x address is most often on.
+    if (!d.allPairs.length && chainChoice === 'auto' && d.kind === 'evm') {
+      var extra = await probeDexChains(addr, EVM_PROBE_CHAINS);
+      if (extra.length) { d.allPairs = extra; d.sources.dexscreener = 'ok (' + extra.length + ' pairs, per-chain)'; }
+    }
 
     var chainsSeen = {};
     d.allPairs.forEach(function (p) { chainsSeen[p.chainId] = (chainsSeen[p.chainId] || 0) + liqOf(p) + 1e-9; });
@@ -170,13 +193,24 @@
       d.chain = { evm: 'ethereum', solana: 'solana', tron: 'tron', sui: 'sui', ton: 'ton' }[d.kind] || null;
       d.chainGuessed = true;
     }
+    // A 0x address with no pairs is not assumed to be Ethereum. Use the chain whose contract scan answers.
+    if (d.chainGuessed && d.kind === 'evm' && chainChoice === 'auto' && EVM_RE.test(addr)) {
+      var hit = await probeGoPlusChains(addr, EVM_PROBE_CHAINS);
+      if (hit) {
+        d.chain = hit.chain;
+        d.chainGuessed = false;
+        d.gp = hit.gp;
+        d.sources.goplus = 'ok (chain matched by contract scan)';
+      }
+    }
     d.pairs = d.allPairs.filter(function (p) { return p.chainId === d.chain; });
 
     if (d.chain === 'solana') { d.engine = 'solana'; await gatherSolana(d, opts.rpcMode || 'always'); }
     else if (d.chain === 'sui') { d.engine = 'goplus-sui'; await gatherGoPlus(d, GOPLUS + 'sui/token_security?contract_addresses=' + encodeURIComponent(addr)); }
     else if (GOPLUS_IDS[d.chain] && (EVM_RE.test(addr) || d.chain === 'tron')) {
       d.engine = 'goplus';
-      var tasks = [gatherGoPlus(d, GOPLUS + 'token_security/' + GOPLUS_IDS[d.chain] + '?contract_addresses=' + addr)];
+      var tasks = [];
+      if (!d.gp) tasks.push(gatherGoPlus(d, GOPLUS + 'token_security/' + GOPLUS_IDS[d.chain] + '?contract_addresses=' + addr));
       if (HONEYPOT_IDS[d.chain]) tasks.push(
         getJSON(HONEYPOT + '?address=' + addr + '&chainID=' + HONEYPOT_IDS[d.chain], 15000)
           .then(function (h) { d.hp = h; d.sources.honeypot = 'ok'; })
@@ -212,6 +246,40 @@
       });
       d.sources.dexSearch = 'ok';
     } catch (e) { d.errors.dexSearch = e.message; }
+  }
+
+  // Per-chain DexScreener pairs. Failures are skipped; an empty list means nothing was listed.
+  async function probeDexChains(addr, chains) {
+    var all = [];
+    for (var i = 0; i < chains.length; i++) {
+      try {
+        var tp = await getJSON(DEX_PAIRS + encodeURIComponent(chains[i]) + '/' + encodeURIComponent(addr));
+        if (Array.isArray(tp) && tp.length) all = all.concat(tp);
+      } catch (e) { /* try the next chain */ }
+    }
+    return all;
+  }
+  // GoPlus token security for each chain. A hit needs a real token record, not an empty "not indexed" object.
+  async function probeGoPlusChains(addr, chains) {
+    var hits = [];
+    for (var i = 0; i < chains.length; i++) {
+      var chain = chains[i], url = GOPLUS + 'token_security/' + GOPLUS_IDS[chain] + '?contract_addresses=' + addr;
+      try {
+        var j = await getJSON(url, 15000);
+        var res = j && j.result;
+        var v = res && (res[addr] || res[addr.toLowerCase()] || (Object.keys(res).length ? res[Object.keys(res)[0]] : null));
+        if (j && j.code === 1 && goPlusToken(v)) hits.push({ chain: chain, gp: v });
+      } catch (e) { /* try the next chain */ }
+    }
+    if (!hits.length) return null;
+    hits.sort(function (a, b) { return goPlusLiq(b.gp) - goPlusLiq(a.gp) || (Number(b.gp.holder_count) || 0) - (Number(a.gp.holder_count) || 0); });
+    return hits[0];
+  }
+  function goPlusToken(v) {
+    return !!(v && (v.token_name || v.token_symbol || (v.dex && v.dex.length) || (v.holders && v.holders.length) || v.total_supply));
+  }
+  function goPlusLiq(g) {
+    return (g.dex || []).reduce(function (s, x) { return s + (Number(x.liquidity) || 0); }, 0);
   }
 
   // GoPlus, with one retry after a rate limit (code 4029 or HTTP 429).
@@ -252,11 +320,14 @@
 
   async function fetchRug(d) {
     var url = RUG + d.addr + '/report';
+    // RugCheck sometimes answers 400 ("unable to generate report") on the first try and succeeds a moment later.
+    function retryable(e) { return e && (e.status === 429 || e.status === 400 || (e.status >= 500)); }
     try {
-      var j;
+      var j, retried = false;
       try { j = await getJSON(url, 15000); }
       catch (e) {
-        if (e.status !== 429) throw e;
+        if (!retryable(e)) throw e;
+        retried = true;
         await sleep(NET.retryWait);
         try { j = await getJSON(url, 15000); }
         catch (e2) {
@@ -266,7 +337,8 @@
           return;
         }
       }
-      if (j && !j.error) { d.rug = j; d.sources.rugcheck = 'ok'; } else d.errors.rugcheck = (j && j.error) || 'no report';
+      if (j && !j.error) { d.rug = j; d.sources.rugcheck = retried ? 'ok (after retry)' : 'ok'; }
+      else d.errors.rugcheck = (j && j.error) || 'no report';
     } catch (e) { d.errors.rugcheck = e.message; }
   }
 
@@ -481,7 +553,10 @@
     // ----- contract / authority -----
     var h = null;
     if (d.engine === 'solana') {
-      if (d.authoritiesKnown) {
+      var stable = ISSUER_STABLES[d.addr] && rc && rc.verification && rc.verification.jup_strict ? ISSUER_STABLES[d.addr] : null;
+      if (d.authoritiesKnown && stable && (d.mintAuthority || d.freezeAuthority)) {
+        add('info', 'This is ' + stable + '. The issuer keeps mint and freeze authority by design (to issue, redeem and comply with law enforcement requests), so these are not scored. The issuer can still freeze any wallet.');
+      } else if (d.authoritiesKnown) {
         if (d.mintAuthority) add('bad', 'Mint authority is active: additional tokens can be minted, diluting existing holders.', 35);
         else add('good', 'Mint authority revoked: supply is fixed.');
         if (d.freezeAuthority) add('bad', 'Freeze authority is active: holder balances can be frozen, preventing transfers or sales.', 40, { force: true });
@@ -494,8 +569,8 @@
       if (x.transferHook) add('warn', 'Every transfer runs extra code chosen by the issuer (transfer hook).', 15);
       if (rc) scoreTransferFee(rc, add);
       if (rc && rc.verification) {
-        if (rc.verification.jup_strict) add('good', 'Verified on Jupiter\'s strict token list.');
-        else if (rc.verification.jup_verified) add('good', 'Listed as verified on Jupiter.');
+        if (rc.verification.jup_strict) add('good', 'Verified on Jupiter\'s strict token list.').jup = true;
+        else if (rc.verification.jup_verified) add('good', 'Listed as verified on Jupiter.').jup = true;
       }
       h = solanaHolders(d);
     } else if (d.engine === 'goplus' && d.gp) {
@@ -524,7 +599,43 @@
     }
 
     // ----- market -----
-    if (!pairs.length) add('bad', 'No trading market found on DexScreener. Selling may not be possible.', 25, { grp: 'liquidity' });
+    var est = false;
+    var rcMk = !pairs.length && rc && !d.rugSummary && (rc.markets || []).length ? rc.markets : null;
+    if (!pairs.length && rcMk) {
+      // DexScreener drops dead or inactive pools. RugCheck still sees them on-chain.
+      G = 'liquidity';
+      m.liq = Number(rc.totalMarketLiquidity) || 0;
+      m.price = rc.price != null ? Number(rc.price) : null;
+      m.onCurve = rcMk.every(function (x) { return /^pump_fun$|curve|launch/i.test(x.marketType || ''); });
+      var supUi = rc.token && Number(rc.token.supply) / Math.pow(10, rc.token.decimals || 0);
+      if (rc.price && supUi) m.mcap = m.fdv = Number(rc.price) * supUi;
+      var seen = Date.parse(rc.detectedAt || '');
+      add('info', 'DexScreener lists no trading pairs for this token, so market figures come from RugCheck\'s on-chain pool data (' + rcMk.length + ' pool' + (rcMk.length === 1 ? '' : 's') + '). Volume and price history are not available.', 0, { data: true });
+      if (isFinite(seen)) { ageH = (now - seen) / 36e5; created = seen; m.created = seen; fresh = ageH < 1; }
+      if (m.onCurve) {
+        add('info', 'Still on a launchpad bonding curve (not yet migrated to a DEX pool).');
+        if ((m.mcap || 0) < 10000) add('bad', 'Very low market cap (' + usd(m.mcap) + '): price is highly sensitive to individual trades.', 20);
+        else if ((m.mcap || 0) < 50000) add('warn', 'Low market cap (' + usd(m.mcap) + '): expect high volatility.', 10);
+      } else scoreMigratedLiquidity(m.liq, ageH, add, red, 'RugCheck');
+      var lockedMk = rcMk.filter(function (x) { return x.lp && x.lp.lpLockedPct != null; })
+        .sort(function (a, b) { return (Number(b.lp.lpLockedUSD) || 0) - (Number(a.lp.lpLockedUSD) || 0); })[0];
+      if (lockedMk && !m.onCurve && m.liq < 1000 && Number(lockedMk.lp.lpLockedPct) >= 90)
+        add('info', pct(Number(lockedMk.lp.lpLockedPct)) + ' of LP is locked or burned, but the pool holds so little that the lock protects almost nothing.');
+      if (isFinite(seen)) {
+        G = 'activity';
+        if (ageH < 24) add('bad', 'Recently launched: first seen ' + ago(ageH) + ' ago. New tokens carry elevated risk.', 15);
+        else if (ageH < 168) add('warn', 'Early-stage token: first seen ' + ago(ageH) + ' ago.', 8);
+        else add('good', 'Trading history: ' + ago(ageH) + '.');
+      }
+      est = established(d, rc, m, ageH);
+    } else if (!pairs.length && d.gp && (d.gp.dex || []).length) {
+      // Same idea on EVM: GoPlus still lists the DEX pools DexScreener dropped.
+      G = 'liquidity';
+      m.liq = goPlusLiq(d.gp);
+      add('info', 'DexScreener lists no trading pairs for this token, so liquidity comes from GoPlus\'s pool list (' + d.gp.dex.length + ' pool' + (d.gp.dex.length === 1 ? '' : 's') + '). Volume, age and price history are not available.', 0, { data: true });
+      scoreMigratedLiquidity(m.liq, ageH, add, red, 'GoPlus');
+      est = established(d, rc, m, ageH);
+    } else if (!pairs.length) add('bad', 'No trading market found on DexScreener or the contract scanners. Selling may not be possible.', 25, { grp: 'liquidity' });
     else {
       m.liq = totalLiq;
       m.fdv = main.fdv || main.marketCap; m.mcap = main.marketCap || main.fdv; m.price = main.priceUsd;
@@ -542,7 +653,8 @@
           : 'No liquidity pool reported (likely still on a launchpad bonding curve).');
         if ((m.mcap || 0) < 10000) add('bad', 'Very low market cap (' + usd(m.mcap) + '): price is highly sensitive to individual trades.', 20);
         else if ((m.mcap || 0) < 50000) add('warn', 'Low market cap (' + usd(m.mcap) + '): expect high volatility.', 10);
-      } else if (m.liq < 5000) add('bad', 'Very low liquidity (' + usd(m.liq) + '): sales may have significant price impact.', 30);
+      } else if (m.liq < DEAD_LIQ && ageH != null && ageH >= 1) red('Liquidity is effectively gone (' + usd(m.liq) + ' across all pools): the token cannot be sold for any meaningful amount.', 'liquidity');
+      else if (m.liq < 5000) add('bad', 'Very low liquidity (' + usd(m.liq) + '): sales may have significant price impact.', 30);
       else if (m.liq < 25000) add('warn', 'Low liquidity (' + usd(m.liq) + '): larger sales will move the price noticeably.', 15);
       else add('good', 'Adequate liquidity (' + usd(m.liq) + ').');
       G = 'activity';
@@ -559,8 +671,13 @@
       }
       // Sell pressure: last hour when there is enough activity, otherwise 24 hours.
       var tx1 = m.buys1 + m.sells1, tx = m.buys + m.sells;
+      est = established(d, rc, m, ageH);
       if (tx1 >= 50) {
-        if (m.sells1 > 2 * m.buys1) add('warn', 'Heavy selling in the last hour: ' + m.sells1 + ' sells vs ' + m.buys1 + ' buys.', 10);
+        if (m.sells1 > 2 * m.buys1) {
+          // One hour of selling on a deep, long-lived market is normal volatility, not a rug signal.
+          if (est) add('info', 'Heavy selling in the last hour: ' + m.sells1 + ' sells vs ' + m.buys1 + ' buys. Normal swings for a deep, long-traded market, so not scored.');
+          else add('warn', 'Heavy selling in the last hour: ' + m.sells1 + ' sells vs ' + m.buys1 + ' buys.', 10);
+        }
         else add('info', 'Last hour: ' + m.buys1 + ' buys / ' + m.sells1 + ' sells' + (m.change1 != null && isFinite(m.change1) ? '. Price change: ' + (m.change1 > 0 ? '+' : '') + Math.round(m.change1 * 10) / 10 + '%.' : '.'));
       } else if (tx >= 20 && m.sells / tx > 0.7) add('warn', 'Elevated sell pressure: ' + m.sells + ' sells vs ' + m.buys + ' buys in 24h.', 10);
       else if (tx > 0) add('info', '24h trades: ' + m.buys + ' buys / ' + m.sells + ' sells.');
@@ -569,7 +686,9 @@
       G = 'contract';
       var trustedTok = (d.gp && flag(d.gp.trust_list)) || (rc && rc.verification && rc.verification.jup_strict);
       if (d.lookalikes && d.lookalikes.length && !trustedTok) {
-        var big = d.lookalikes.filter(function (p) { return liqOf(p) >= 10 * Math.max(totalLiq, 1) && (p.pairCreatedAt || Infinity) < created; })
+        // On a bonding curve DexScreener reports $0 liquidity, so compare against market cap and ignore dust pools.
+        var ref = Math.max(totalLiq, m.onCurve ? (m.mcap || 0) : 0, 1);
+        var big = d.lookalikes.filter(function (p) { return liqOf(p) >= 10000 && liqOf(p) >= 10 * ref && (p.pairCreatedAt || Infinity) < created; })
           .sort(function (a, b) { return liqOf(b) - liqOf(a); })[0];
         if (big) add('warn', 'Another token named $' + String(big.baseToken.symbol).trim() + ' on ' + chainName(d.chain) + ' has far more liquidity (' + usd(liqOf(big)) + '). Check you have the right address.', 10);
       }
@@ -581,11 +700,24 @@
       var note = h.poolPct > 0.5 ? ' (excluding ' + h.poolPct.toFixed(1) + '% held in pools, bonding curves or burn addresses)' : '';
       var lead = 'Top 10 wallets hold ' + h.top10.toFixed(1) + '% of supply' + note;
       if (h.poolPct > 50) lead = pct(h.poolPct) + ' of supply is in pools, locked or burn addresses. The 10 largest other wallets hold ' + h.top10.toFixed(1) + '%';  // F6
-      if (h.top10 > 50) add('bad', lead + '. High concentration increases sell-off risk.', 30);
-      else if (h.top10 > 30) add('warn', lead + '. This may include exchange wallets.', 15);
-      else add('good', lead + (h.poolPct > 50 ? '.' : ': broadly distributed.'));
-      if (h.top1 > 15) add('warn', 'A single wallet holds ' + h.top1.toFixed(1) + '%.', 15);
-      else if (h.top1 > 0) add('good', 'Largest single wallet holds ' + h.top1.toFixed(1) + '%.');
+      if (est) {
+        // On established tokens the biggest wallets are often exchanges, treasuries, DAO or vesting accounts.
+        // BluntX cannot label them yet, so concentration stays visible but is capped at EST_HOLDER_CAP points.
+        var hp1 = h.top10 > 50 ? 8 : h.top10 > 30 ? 5 : 0, hp2 = h.top1 > 15 ? 5 : 0;
+        var tail = '. On a long-traded, deeply liquid token these are often exchange, treasury, DAO or vesting wallets, which BluntX cannot identify yet.';
+        if (h.top10 > 30) add('warn', lead + tail, hp1);
+        else add('good', lead + (h.poolPct > 50 ? '.' : ': broadly distributed.'));
+        if (h.top1 > 15) add('warn', 'A single unlabeled wallet holds ' + h.top1.toFixed(1) + '%.', Math.min(hp2, Math.max(0, EST_HOLDER_CAP - hp1)));
+        else if (h.top1 > 0) add('good', 'Largest single wallet holds ' + h.top1.toFixed(1) + '%.');
+      } else if (h.poolPct >= 90 && h.top10 < 5) {
+        add('info', lead + '. Almost all of the supply sits in the pool or bonding curve, so this low top-10 share is not broad ownership.');
+      } else {
+        if (h.top10 > 50) add('bad', lead + '. High concentration increases sell-off risk.', 30);
+        else if (h.top10 > 30) add('warn', lead + '. This may include exchange wallets.', 15);
+        else add('good', lead + (h.poolPct > 50 ? '.' : ': broadly distributed.'));
+        if (h.top1 > 15) add('warn', 'A single wallet holds ' + h.top1.toFixed(1) + '%.', 15);
+        else if (h.top1 > 0) add('good', 'Largest single wallet holds ' + h.top1.toFixed(1) + '%.');
+      }
       if (!h.ownersKnown) add('info', 'Pool wallets could not be identified, so holder figures may include liquidity pools.');
     } else if (!limited) add('warn', 'Holder data is temporarily unavailable. Please try again shortly.', 5, { data: true });
 
@@ -612,18 +744,23 @@
     // ----- C. liquidity -----
     G = 'liquidity';
     var pool = poolInfo(d, pairs, totalLiq, rc, now);
-    if (pool) scoreLiquidity(d, pool, add, now);
+    if (pool) scoreLiquidity(d, pool, add, now, est);
     scoreUnlocks(d, rc, m, add, now);
 
     // ----- RugCheck findings (Solana) -----
     G = 'contract';
     if (rc) {
       if (rc.rugged) red('RugCheck reports this token as rugged.');
-      (rc.risks || []).filter(function (r) { return r.level === 'danger' && !NATIVE_RC.test(r.name || ''); }).slice(0, 3)
+      (rc.risks || []).filter(function (r) { return r.level === 'danger' && !NATIVE_RC.test(r.name || '') && !DUP_RC.test(r.name || ''); }).slice(0, 3)
         .forEach(function (r) { add('bad', 'RugCheck: ' + r.name + (r.description ? ' (' + r.description + ')' : ''), 15); });
-      (rc.risks || []).filter(function (r) { return r.level === 'warn' && !NATIVE_RC.test(r.name || ''); }).slice(0, 3)
+      (rc.risks || []).filter(function (r) { return r.level === 'warn' && !NATIVE_RC.test(r.name || '') && !DUP_RC.test(r.name || ''); }).slice(0, 3)
         .forEach(function (r) { add('info', 'RugCheck note: ' + r.name + (r.description ? ' (' + r.description + ')' : '')); });
+      (rc.risks || []).filter(function (r) { return DUP_RC.test(r.name || '') && (r.level === 'danger' || r.level === 'warn'); }).slice(0, 3)
+        .forEach(function (r) { add('info', 'RugCheck note: ' + r.name + (r.description ? ' (' + r.description + ')' : '') + '. Already covered by BluntX\'s own check, so not scored again.'); });
     }
+
+    var inc = KNOWN_INCIDENTS[(d.chain || '') + ':' + String(d.addr).toLowerCase()];
+    if (inc) red('Known incident: ' + inc);
 
     // ----- category caps, total, verdict -----
     Object.keys(CAPS).forEach(function (cat) {
@@ -639,6 +776,10 @@
     var pts = reasons.reduce(function (s, r) { return s + (r.pts || 0); }, 0);
     var forceRed = reasons.some(function (r) { return r.force; });
     var verdict = forceRed || pts >= HIGH_MIN ? 'red' : pts >= LOW_MAX ? 'yellow' : 'green';
+    if (verdict === 'red') reasons.forEach(function (r) {   // a green tick must not read as safety on a High-risk token
+      if (r.jup) { r.level = 'info'; r.text += ' Being listed only means the token is known to Jupiter; it does not make it safe.'; }
+      if (r.dustLock) r.level = 'info';
+    });
     var conf = confidence(d, { pairs: pairs, holders: h, pool: pool, limited: limited, fullRug: fullRug, fresh: fresh });
     var lowData = false;
     if (verdict === 'green' && conf.level === 'Low') { verdict = 'yellow'; lowData = true; }
@@ -646,6 +787,47 @@
       .sort(function (a, b) { return (b.force ? 1000 : 0) + b.pts - ((a.force ? 1000 : 0) + a.pts); }).slice(0, 3);
     return { verdict: verdict, points: pts, reasons: reasons, market: m, main: main, holders: h, limited: limited,
       pool: pool, confidence: conf, lowData: lowData, forced: forceRed, top: top, groups: groupSummary(reasons), fresh: fresh };
+  }
+
+  // Migrated-pool liquidity. Under $500 is a forced High once the token is at least an hour old
+  // (or when age is unknown). A pool still filling in its first hour keeps the ordinary low-liquidity points.
+  function scoreMigratedLiquidity(liq, ageH, add, red, where) {
+    var young = ageH != null && ageH < 1;
+    if (liq < DEAD_LIQ && !young) red('Liquidity is effectively gone (' + usd(liq) + ' across all pools): the token cannot be sold for any meaningful amount.', 'liquidity');
+    else if (liq < 5000) add('bad', 'Very low liquidity (' + usd(liq) + '): sales may have significant price impact.', 30);
+    else if (liq < 25000) add('warn', 'Low liquidity (' + usd(liq) + '): larger sales will move the price noticeably.', 15);
+    else add('good', 'Pool liquidity (from ' + where + '): ' + usd(liq) + '.');
+  }
+
+  // Long-lived, deeply liquid token with an outside trust signal. Never true when a critical contract control remains.
+  function established(d, rc, m, ageH) {
+    if (ageH == null || ageH < EST_AGE_H || !(m.liq >= EST_LIQ)) return false;
+    if (d.engine === 'solana') {
+      if (!d.authoritiesKnown) return false;
+      // Issuer stables keep mint and freeze on purpose. That is explained and not scored, and it does not
+      // keep the token out of the established-token holder cap. Any other mint or freeze still does.
+      if (!ISSUER_STABLES[d.addr] && (d.freezeAuthority || d.mintAuthority)) return false;
+      var x = d.ext || {};
+      if (x.permanentDelegate || x.defaultFrozen || x.nonTransferable) return false;
+      return !!(rc && rc.verification && (rc.verification.jup_strict || rc.verification.jup_verified) && !rc.rugged);
+    }
+    if (d.engine === 'goplus' && d.gp) return estEvm(d, d.gp, d.pairs, ageH);
+    return false;
+  }
+  function estEvm(d, g, pairs, ageH, ownerState) {
+    var liq = (pairs || []).reduce(function (s, p) { return s + liqOf(p); }, 0);
+    if (!liq && g) liq = goPlusLiq(g);
+    if (ageH == null || ageH < EST_AGE_H || liq < EST_LIQ) return false;
+    if (flag(g.is_honeypot) || flag(g.owner_change_balance) || flag(g.hidden_owner) || flag(g.can_take_back_ownership) || g.is_open_source === '0') return false;
+    if (d.hp && d.hp.honeypotResult && d.hp.honeypotResult.isHoneypot) return false;
+    var cc = d.hp && d.hp.contractCode;
+    var isProxy = flag(g.is_proxy) || !!(cc && (cc.isProxy || cc.hasProxyCalls));
+    if (cc && isProxy && cc.openSource === false) return false;
+    var tax = Math.max(Number(g.sell_tax || 0), Number(g.buy_tax || 0)) * 100;
+    if (tax > 5) return false;
+    var owner = String(g.owner_address || '').trim();
+    var renounced = ownerState ? ownerState === 'renounced' : (!owner || DEAD.test(owner));
+    return flag(g.trust_list) || !!(g.is_in_cex && flag(g.is_in_cex.listed)) || (renounced && flag(g.is_open_source));
   }
 
   // Per-card totals for the report.
@@ -687,8 +869,14 @@
     }
     if (bt != null && bt > 10) add('bad', 'High buy tax: ' + pct(bt) + '.', 15);
     var cc = hp.contractCode;
-    if (cc && cc.rootOpenSource === false) add('bad', 'Contract source code is not verified.', 20);
+    var implClosed = !!(cc && (cc.isProxy || cc.hasProxyCalls) && cc.openSource === false);
+    if (cc && (cc.rootOpenSource === false || implClosed)) add('bad', implClosed ? 'The contract code is hidden and can be swapped at any time.' : 'Contract source code is not verified.', implClosed ? 30 : 20, implClosed ? { force: true } : undefined);
     else if (cc && cc.rootOpenSource) add('good', 'Contract source code is verified.');
+    var hs = hp.summary;
+    if (hs && /^high$/i.test(hs.risk || '')) {
+      var hf = (hs.flags || []).filter(function (f) { return /high|critical/i.test(f.severity || ''); }).map(function (f) { return f.description || f.flag; });
+      add('bad', 'honeypot.is rates this token high risk' + (hf.length ? ': ' + hf.slice(0, 2).join(' ') : '.'), 15);
+    }
     if (cc && (cc.isProxy || cc.hasProxyCalls) && !d.proxySlot) d.proxySlot = true;
   }
 
@@ -816,14 +1004,18 @@
     return Number(x.is_locked) === 1 || DEAD.test(x.address) || String(x.address).toLowerCase() === d.addr.toLowerCase() || /burn|dead|lock/i.test(x.tag || '');
   }
 
-  function scoreLiquidity(d, pool, add, now) {
+  function scoreLiquidity(d, pool, add, now, est) {
     var lockTxt = pool.kind === 'curve' ? 'bonding curve, no pool yet' : pool.kind === 'lp' ? pct(pool.lockPct) + ' of LP locked or burned'
       : pool.kind === 'concentrated' ? 'lock status not available for this pool type' : 'lock status not available';
     if (pool.kind === 'curve') return;
-    add(pool.kind === 'lp' && pool.lockPct >= 90 ? 'good' : 'info', 'Main pool: ' + pool.dex + ', ' + usd(pool.liq) + ' (' + Math.round(pool.share * 100) + '% of all liquidity), ' + lockTxt + '.');
+    var dust = pool.kind === 'lp' && pool.lockPct >= 90 && pool.liq < 1000;
+    if (dust) add('info', 'Main pool: ' + pool.dex + ', ' + usd(pool.liq) + ', ' + lockTxt + ', but the pool holds so little that the lock protects almost nothing.').dustLock = true;
+    else add(pool.kind === 'lp' && pool.lockPct >= 90 ? 'good' : 'info', 'Main pool: ' + pool.dex + ', ' + usd(pool.liq) + ' (' + Math.round(pool.share * 100) + '% of all liquidity), ' + lockTxt + '.');
     var g = d.gp, ownerLp = 0, eoaLp = 0;
     if (d.engine === 'solana' && pool.kind === 'lp' && pool.liq >= 1000) {
-      if (pool.lockPct < 50) add('bad', 'Most of the liquidity in the main pool can be withdrawn by its owner.', 25, { cat: 'liquidity' });
+      // Deep, long-lived pools are usually provided by many LPs. Unlocked LP there is normal market making.
+      if (est && pool.lockPct < 90) add('info', 'Main pool LP locked: ' + pct(pool.lockPct) + '. Normal for a deep, long-traded market where many providers supply liquidity, so not scored.');
+      else if (pool.lockPct < 50) add('bad', 'Most of the liquidity in the main pool can be withdrawn by its owner.', 25, { cat: 'liquidity' });
       else if (pool.lockPct < 90) add('warn', 'Only ' + pct(pool.lockPct) + ' of the main pool\'s liquidity is locked.', 10, { cat: 'liquidity' });
     }
     if (d.engine === 'goplus' && g && pool.kind === 'lp') {
@@ -836,6 +1028,7 @@
       });
       if (ownerLp >= 50) add('bad', 'The creator controls ' + pct(ownerLp) + ' of the liquidity and can remove it.', 25, { cat: 'liquidity' });
       else if (eoaLp >= 50) add('bad', 'Most of the pool\'s LP tokens (' + pct(eoaLp) + ') sit in an ordinary wallet that can withdraw them at any time.', 20, { cat: 'liquidity' });
+      else if (dust) { /* the main-pool line already says the lock protects almost nothing */ }
       else if (pool.lockPct >= 90) add('good', pct(pool.lockPct) + ' of LP tokens are locked or burned.');
       else if ((d.pairs || []).reduce(function (s, p) { return s + liqOf(p); }, 0) < 500000) add('warn', 'Only ' + pct(pool.lockPct) + ' of LP tokens are locked or burned: liquidity could be withdrawn.', 15, { cat: 'liquidity' });
       else add('info', pct(pool.lockPct) + ' of LP tokens are locked or burned.');
@@ -886,11 +1079,14 @@
     var g = d.gp, hp = d.hp;
     var owner = (g.owner_address || '').trim();
     var ownerState = !('owner_address' in g) ? 'unknown' : (!owner || DEAD.test(owner) || /^T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb$/.test(owner)) ? 'renounced' : 'active';
+    // "Renounced" ownership that can be taken back, or a hidden owner, is not renounced for owner-power purposes.
+    if (ownerState === 'renounced' && (flag(g.can_take_back_ownership) || flag(g.hidden_owner))) ownerState = 'reclaimable';
     var trusted = flag(g.trust_list);
     function ownerPower(isOn, text, p) {
       if (!flag(isOn)) return;
-      if (trusted && ownerState !== 'renounced') { add('warn', text + ' (GoPlus-trusted token; likely by design, e.g. staking emissions).', Math.round(p / 3)); return; }
+      if (trusted && ownerState !== 'renounced' && ownerState !== 'reclaimable') { add('warn', text + ' (GoPlus-trusted token; likely by design, e.g. staking emissions).', Math.round(p / 3)); return; }
       if (ownerState === 'renounced') add('info', text + ', but ownership is renounced, so it cannot be used.');
+      else if (ownerState === 'reclaimable') add('bad', text + ', and ownership can be reclaimed, so this power can come back at any time.', Math.round(p / 2));
       else add(ownerState === 'active' ? 'bad' : 'warn', text + (ownerState === 'unknown' ? ' (owner status unknown).' : '.'), ownerState === 'active' ? p : Math.round(p / 2));
     }
     var sellTax = g.sell_tax !== '' && g.sell_tax != null ? Number(g.sell_tax) * 100 : null;
@@ -928,6 +1124,7 @@
     if (tt != null && tt > 10) add('warn', 'Wallet-to-wallet transfers are taxed ' + pct(tt) + '.', 10);
 
     if (ownerState === 'renounced') add('good', 'Ownership renounced: contract settings cannot be changed.');
+    else if (ownerState === 'reclaimable') add('info', 'Ownership looks renounced, but it can be reclaimed, so treat the owner powers below as still available.');
     else if (ownerState === 'active') add('info', 'Contract has an active owner (' + owner.slice(0, 6) + '…' + owner.slice(-4) + ').');
 
     if (flag(g.owner_change_balance)) add('bad', 'Owner can modify wallet balances.', 40, { force: ownerState !== 'renounced' });
@@ -937,7 +1134,16 @@
     // D3/D4: proxy and source code
     var cc = hp && hp.contractCode;
     var isProxy = flag(g.is_proxy) || !!(cc && (cc.isProxy || cc.hasProxyCalls));
-    var hidden = g.is_open_source === '0' || !!(cc && cc.rootOpenSource === false);
+    // honeypot.is checks the proxy's implementation too. A closed implementation is hidden code,
+    // even when GoPlus marks the proxy shell itself as verified.
+    var implClosed = !!(cc && isProxy && cc.openSource === false);
+    var hidden = g.is_open_source === '0' || !!(cc && cc.rootOpenSource === false) || implClosed;
+    if (implClosed && flag(g.is_open_source)) add('info', 'GoPlus marks the contract as verified, but honeypot.is reports the proxy\'s implementation code is not public. BluntX goes with the stricter reading.');
+    var hs = hp && hp.summary;
+    if (hs && /^high$/i.test(hs.risk || '')) {
+      var hf = (hs.flags || []).filter(function (f) { return /high|critical/i.test(f.severity || ''); }).map(function (f) { return f.description || f.flag; });
+      add('bad', 'honeypot.is rates this token high risk' + (hf.length ? ': ' + hf.slice(0, 2).join(' ') : '.'), 15);
+    }
     if (isProxy && hidden) add('bad', 'The contract code is hidden and can be swapped at any time.', 30, { force: true });
     else {
       if (hidden) add('bad', 'Contract source code is not verified.', 20);
@@ -974,6 +1180,7 @@
       var nMal = Number(cs.number_of_malicious_contracts_created) || 0;
       var weak = nMal > 0 || flag(cs.honeypot_related_address);
       if (strong.length) add('bad', 'The creator\'s wallet is linked to scams, theft or sanctioned activity.', 40, { cat: 'creator', force: true });
+      else if (weak && !sameCreator && estEvm(d, g, pairs, ageH, ownerState)) add('info', 'GoPlus links the creator\'s wallet to ' + (nMal > 0 ? nMal + ' contract' + (nMal === 1 ? '' : 's') + ' it flags as malicious' : 'honeypot contracts') + ', without naming them. Not scored on a renounced, verified token with over a year of deep trading; check the creator yourself if it matters to you.', 0, { grp: 'creator' });
       else if (weak && !sameCreator) add('bad', 'GoPlus links the creator\'s wallet to ' + (nMal > 0 ? nMal + ' contract' + (nMal === 1 ? '' : 's') + ' it flags as malicious.' : 'honeypot contracts.'),
         ageH != null && ageH < 720 ? 30 : 20, { cat: 'creator' });
       else if (!sameCreator) add('good', 'No scam or honeypot links found for the creator\'s wallet.', 0, { grp: 'creator' });
